@@ -28,6 +28,8 @@ namespace Arduimmer
 		public static void Main(string[] args)
 		{
 			Console.WriteLine("Hello World!");
+			string file = "/home/benito/Documentos/Universidad/5/SED/Prácticas/P1/dado/main.hex";
+			Hex hex = Hex.FromFile(file);
 		}
 	}
 }

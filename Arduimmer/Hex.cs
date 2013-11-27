@@ -28,8 +28,6 @@ namespace Arduimmer
 {
 	public class Hex
 	{
-		private const char Mark = ':';
-
 		public List<HexRecord> records;
 
 		public Hex()
@@ -48,7 +46,10 @@ namespace Arduimmer
 				throw new ArgumentNullException();
 
 			Hex hex = new Hex();
-			foreach (string line in hexText.Split(new char[] {'\n'}, StringSplitOptions.RemoveEmptyEntries))
+
+			hexText = hexText.Replace("\r", "");
+			string[] lines = hexText.Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
+			foreach (string line in lines)
 				hex.AddRecord(line);
 
 			return hex;
@@ -56,16 +57,11 @@ namespace Arduimmer
 
 		public void AddRecord(string line)
 		{
-			if (string.IsNullOrEmpty(line))
+			if (string.IsNullOrEmpty(line) || line[0] != HexRecord.Mark)
 				return;
 
-			// Check if it's a comment or something else
-			if (line[0] != Mark)
-				return;
-
-			// TODO: Parse and add the record
+			this.records.Add(HexRecord.FromAsciiString(line));
 		}
-
 	}
 }
 

@@ -22,27 +22,63 @@
 using System;
 
 public enum RecordType {
-	Data,	// 8, 16, 32
-	Eof,	// 8, 16, 32
-	ExtendedSegAddr,	// 16, 32
-	StartSegAddr,		// 16, 32
-	ExtendedLinearAddr,	// 32
-	StartLinearAddr,	// 32
+	Data               = 00,	// 8, 16, 32
+	Eof                = 01,	// 8, 16, 32
+	ExtendedSegAddr    = 02,	// 16, 32
+	StartSegAddr       = 03,	// 16, 32
+	ExtendedLinearAddr = 04,	// 32
+	StartLinearAddr    = 05,	// 32
 };
 
 namespace Arduimmer
 {
-	public struct HexRecord
+	public class HexRecord
 	{
-		public HexRecord(RecordType type)
-			: this()
-		{
-			this.RecordType = type;
+		public static char Mark {
+			get { return ':'; }
+		}
+
+		public ushort Address {
+			get;
+			set;
 		}
 
 		public RecordType RecordType {
 			get;
 			set;
+		}
+
+		public byte[] Data {
+			get;
+			set;
+		}
+
+		public static HexRecord FromAsciiString(string str)
+		{
+			// Check if it's a comment or something else (RECORD MARK)
+			if (str[0] != Mark)
+				return null;
+
+			// TODO: Parse and add the record
+			HexRecord record = new HexRecord();
+
+			// Get record length (RECLEN)
+			byte length = Convert.ToByte(str.Substring(1, 2), 16);
+
+			// Get data address (LOAD OFFSET)
+			record.Address = Convert.ToUInt16(str.Substring(3, 4), 16);
+
+			// Get type (RECTYPE)
+			record.RecordType = (RecordType)Convert.ToByte(str.Substring(7, 1), 16);
+
+			// Get data
+			record.Data = new byte[length];
+			for (int i = 0; i < length; i++)
+				record.Data[i] = Convert.ToByte(str.Substring(8 + i * 2, 2), 16);
+
+			// TODO: Check shecksum
+
+			return record;
 		}
 	}
 }
