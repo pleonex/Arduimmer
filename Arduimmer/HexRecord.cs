@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------
-// <copyright file="Program.cs" company="none">
+// <copyright file="HexRecord.cs" company="none">
 // Copyright (C) 2013
 //
 //   This program is free software: you can redistribute it and/or modify
@@ -21,13 +21,29 @@
 //-----------------------------------------------------------------------
 using System;
 
+public enum RecordType {
+	Data,	// 8, 16, 32
+	Eof,	// 8, 16, 32
+	ExtendedSegAddr,	// 16, 32
+	StartSegAddr,		// 16, 32
+	ExtendedLinearAddr,	// 32
+	StartLinearAddr,	// 32
+};
+
 namespace Arduimmer
 {
-	public static class MainClass
+	public struct HexRecord
 	{
-		public static void Main(string[] args)
+		public HexRecord(RecordType type)
+			: this()
 		{
-			Console.WriteLine("Hello World!");
+			this.RecordType = type;
+		}
+
+		public RecordType RecordType {
+			get;
+			set;
 		}
 	}
 }
+

@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------
-// <copyright file="Program.cs" company="none">
+// <copyright file="Hex.cs" company="none">
 // Copyright (C) 2013
 //
 //   This program is free software: you can redistribute it and/or modify
@@ -20,14 +20,52 @@
 // <date>27/11/2013</date>
 //-----------------------------------------------------------------------
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
 
 namespace Arduimmer
 {
-	public static class MainClass
+	public class Hex
 	{
-		public static void Main(string[] args)
+		private const char Mark = ':';
+
+		public List<HexRecord> records;
+
+		public Hex()
 		{
-			Console.WriteLine("Hello World!");
+			this.records = new List<HexRecord>();
 		}
+
+		public static Hex FromFile(string hexPath)
+		{
+			return Hex.FromText(File.ReadAllText(hexPath, Encoding.ASCII));
+		}
+
+		public static Hex FromText(string hexText)
+		{
+			if (string.IsNullOrEmpty(hexText))
+				throw new ArgumentNullException();
+
+			Hex hex = new Hex();
+			foreach (string line in hexText.Split(new char[] {'\n'}, StringSplitOptions.RemoveEmptyEntries))
+				hex.AddRecord(line);
+
+			return hex;
+		}
+
+		public void AddRecord(string line)
+		{
+			if (string.IsNullOrEmpty(line))
+				return;
+
+			// Check if it's a comment or something else
+			if (line[0] != Mark)
+				return;
+
+			// TODO: Parse and add the record
+		}
+
 	}
 }
+
