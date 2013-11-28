@@ -20,6 +20,7 @@
 // <date>27/11/2013</date>
 //-----------------------------------------------------------------------
 using System;
+using System.IO.Ports;
 
 namespace Arduimmer
 {
@@ -27,9 +28,19 @@ namespace Arduimmer
 	{
 		public static void Main(string[] args)
 		{
-			Console.WriteLine("Hello World!");
 			string file = "/home/benito/Documentos/Universidad/5/SED/Prácticas/P1/dado/main.hex";
 			Hex hex = Hex.FromFile(file);
+
+			SerialPort port = new SerialPort("/dev/ttyACM0", 9600, Parity.None, 8, StopBits.One); 
+			port.RtsEnable = true;
+			port.DtrEnable = true;
+			port.Open();
+
+			port.Write("ping");
+			Console.Write(port.ReadLine());
+
+			port.Close();
+			port.Dispose();
 		}
 	}
 }
