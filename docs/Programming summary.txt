@@ -507,7 +507,63 @@ Addr[07:00] -> 000FF6h (TBLPTRL)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Device Reading                                                               #
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-TODO
+|_@ Read Code Memory, ID Locations & Configuration Bits
+* One byte at a time using '1001' command.
+* Post-increment won't update TBLPTRU (00FFFFh + 1 != 010000h -> 000000h).
+* Address in Table Pointer, data to read from PGD.
+---> The "Device Reading" sequence is described below:
+        #1 Write address into Table Pointer
+        #2 Write '1001' command
+        #3 Wait 8 clock cycles holding PGD low
+        #4 Wait time P6 holding low PGC
+        #5 Read 8 bits from PGD in the following 8 clock cycles
+        #6 Check if all bytes are read (index is autoincremented):
+          + No: Go to #1 if need to write new address, else go to #2
+┌───────────────┬──────────────┬───────────────────────────────────────────────┐
+│ 4-Bit Command │ Data Payload │ Core Instruction Description                  │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    0 0 0 0    │    0E XX     │ MOVLW Addr[21:16]                             │
+│    0 0 0 0    │    6E F8     │ MOVWF TBLPTRU                                 │
+│    0 0 0 0    │    0E YY     │ MOVLW Addr[15:08]                             │
+│    0 0 0 0    │    6E F7     │ MOVWF TBLPTRH                                 │
+│    0 0 0 0    │    0E ZZ     │ MOVLW Addr[07:00]                             │
+│    0 0 0 0    │    6E F6     │ MOVWF TBLPTRL                                 │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    1 0 0 1    │    .. MM     │ Read a byte and increment address             │
+├───────────────┴──────────────┴───────────────────────────────────────────────┤
+│ Repeat last block to read from address+1 go to first block to set new address│
+└──────────────────────────────────────────────────────────────────────────────┘
+
+|_@ Read Data EEPROM
+* One byte at a time.
+* Address Pointer at (EEADRH:EEADRL).
+* Data latch at EEDATA, need to shift out the data from that register.
+---> The "Read Data EEPROM" is described below:
+        #1 Set address
+        #2 Read byte & Move it to TABLAT
+        #3 Shift out data (same sequence as '1001' command)
+        #4 Check if all bytes are read:
+          + No: Go to #1
+┌───────────────┬──────────────┬───────────────────────────────────────────────┐
+│ 4-Bit Command │ Data Payload │ Core Instruction Description                  │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    0 0 0 0    │    9E A6     │ BCF   EECON1, EEPGD                           │
+│    0 0 0 0    │    9C A6     │ BCF   EECON1, CFGS                            │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    0 0 0 0    │    0E XX     │ MOVLW <Addr[07:00]>                           │
+│    0 0 0 0    │    6E A9     │ MOVWF EEADRL                                  │
+│    0 0 0 0    │    0E YY     │ MOVLW <Addr[15:08]>                           │
+│    0 0 0 0    │    6E AA     │ MOVWF EEADRH                                  │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    0 0 0 0    │    80 A6     │ BSF   EECON1, RD                              │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    0 0 0 0    │    50 A8     │ MOVF  EEDATA, W, 0                            │
+│    0 0 0 0    │    6E F5     │ MOVWF TABLAT                                  │
+│    0 0 0 0    │    00 00     │ NOP                                           │
+│    0 0 1 0    │    MM NN     │ Shift out data                                │
+├───────────────┴──────────────┴───────────────────────────────────────────────┤
+│ Repeat from second block to read more data.                                  │
+└──────────────────────────────────────────────────────────────────────────────┘
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Configuration Word                                                           #
