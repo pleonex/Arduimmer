@@ -3,11 +3,32 @@ const int pinPGC = 6;
 const int pinPGD = 7;
 const int pinVPP = 2;
 
+const byte InstCore                 = 0x0;
+const byte InstShiftOut             = 0x2;
+const byte InstTblRead              = 0x8;
+const byte InstTblReadPostIncr      = 0x9;
+const byte InstTblReadPostDecr      = 0xA;
+const byte InstTblReadPreIncr       = 0xB;
+const byte InstTblWrite             = 0xC;
+const byte InstTblWritePostIncr     = 0xD;
+const byte InstTblWritePostIncrProg = 0xE;
+const byte InstTblWriteProg         = 0xF;
+
 void picProgrammerSetup() {
   pinMode(pinPGM, OUTPUT);
   pinMode(pinPGC, OUTPUT);
   pinMode(pinPGD, OUTPUT);
   pinMode(pinVPP, OUTPUT); 
+}
+
+byte sendInstruction(byte instr, short payload) {
+  if (bitRead(instr, 3) == 1 || instr == InstShiftOut) {
+    sendBits(instr, 4);
+    return receiveByte();
+  } else {
+    sendBits(instr, 4);
+    sendBits(payload, 16);
+  }
 }
 
 void enterLowVoltageIcsp() {
