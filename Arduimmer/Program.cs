@@ -28,19 +28,11 @@ namespace Arduimmer
 	{
 		public static void Main(string[] args)
 		{
-			string file = "/home/benito/Documentos/Universidad/5/SED/Prácticas/P1/dado/main.hex";
-			Hex hex = Hex.FromFile(file);
-
-			SerialPort port = new SerialPort("/dev/ttyACM0", 9600, Parity.None, 8, StopBits.One); 
-			port.RtsEnable = true;
-			port.DtrEnable = true;
-			port.Open();
-
-			port.Write("ping");
-			Console.Write(port.ReadLine());
-
-			port.Close();
-			port.Dispose();
+			ArduinoCommunication comm = ArduinoCommunication.SearchArduino();
+			if (comm != null)
+				Console.WriteLine("Arduino found at port: {0}", comm.PortName);
+			else
+				Console.WriteLine("Can't find Arduino");
 		}
 	}
 }

@@ -1,4 +1,4 @@
-const int CMD_LENGTH  4
+const int CMD_LENGTH = 4;
 char command[CMD_LENGTH + 1];
 
 void setup() { 
@@ -15,10 +15,10 @@ void serialCommands() {
     return;
   
    Serial.readBytes(command, CMD_LENGTH);   
-   if (strcmp(command, "ping") == 0)
+   if (strcmp(command, "Hey!") == 0)
      ping();
 }
 
 void ping() {
-  Serial.println("pong");
+  Serial.println("Yes?");
 }
