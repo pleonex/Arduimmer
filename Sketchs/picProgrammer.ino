@@ -62,7 +62,7 @@ void sendBit(byte data) {
   digitalWrite(pinPGD, LOW);
 }
 
-void sendBits(short data, int n) {
+void sendBits(unsigned int data, int n) {
   for (int i = 0; i < n; i++)
     sendBit(bitRead(data, i));
 }
@@ -91,7 +91,7 @@ byte receiveByte() {
   return data;
 }
 
-byte sendInstruction(byte instr, short payload) {
+byte sendInstruction(byte instr, unsigned int payload) {
   if (bitRead(instr, 3) == 1 || instr == InstShiftOut) {
     sendBits(instr, 4);
     return receiveByte();
@@ -110,6 +110,9 @@ void setTblPtr(long addr) {
   sendInstruction(InstCore, 0x6EF6);        // MOVWF TBLPTRL
 }
 
+/*---------------------------------------------------------------*/
+/*                       Read functions                          */
+/*---------------------------------------------------------------*/
 byte readIncrMemory(long addr) {
   // 1º Set address into TBLPTR
   setTblPtr(addr);
@@ -132,4 +135,43 @@ byte readMemory(long addr) {
 
 byte readMemory() {
  return sendInstruction(InstTblRead, 0); 
+}
+
+/*---------------------------------------------------------------*/
+/*                      Write functions                          */
+/*---------------------------------------------------------------*/
+void writeMemory(long addr, unsigned int data) {
+  setTblPtr(addr);
+  sendInstruction(InstTblWrite, data);
+}
+
+void writeMemory(unsigned int data) {
+  sendInstruction(InstTblWrite, data); 
+}
+
+void writeIncrMemory(long addr, unsigned int data) {
+  setTblPtr(addr);
+  sendInstruction(InstTblWritePostIncr, data);
+}
+
+void writeIncrMemory(unsigned int data) {
+  sendInstruction(InstTblWritePostIncr, data); 
+}
+
+void writeIncrProgMemory(long addr, unsigned int data) {
+  setTblPtr(addr);
+  sendInstruction(InstTblWritePostIncrProg, data);
+}
+
+void writeIncrProgMemory(unsigned int data) {
+  sendInstruction(InstTblWritePostIncrProg, data); 
+}
+
+void writeProgMemory(long addr, unsigned int data) {
+  setTblPtr(addr);
+  sendInstruction(InstTblWriteProg, data);
+}
+
+void writeProgMemory(unsigned int data) {
+  sendInstruction(InstTblWriteProg, data); 
 }
