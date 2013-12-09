@@ -46,6 +46,8 @@ void serialCommands() {
      enterLowVoltageIcsp();
    else if (strcmp(command, "End!") == 0)
      exitLowVoltageIcsp();
+   else if (strcmp(command, "Era!") == 0)
+     perfomBulkErase(ERASE_CHIP);
 }
 
 void ping() {
@@ -61,4 +63,25 @@ void showDeviceId() {
   exitLowVoltageIcsp();
   
   Serial.println(deviceId, HEX);
+}
+
+void perfomBulkErase(unsigned int mode) {
+  // 1º Write mode into register
+  writeMemory(0x3C0005, (lowByte(mode) << 8) | lowByte(mode));
+  writeMemory(0x3C0006, (highByte(mode) << 8) | highByte(mode));
+
+  // 2º Start erasing
+    // 2.1 Send NOP
+  sendInstruction(InstCore, 0);
+    // 2.2 Send four '0' bits
+  sendBits(0, 4);
+    // 2.3 Wait P11 + P10 time
+  digitalWrite(pinPGD, LOW);
+  digitalWrite(pinPGC, LOW);
+  delayMicroseconds(TIME_P11);
+  delayMicroseconds(TIME_P10);
+    // 2.4 Send null payload
+  sendBits(0, 16);
+  
+  Serial.println("Erase done");
 }

@@ -20,6 +20,9 @@
 // <date>09/12/2013</date>
 //-----------------------------------------------------------------------
 using System;
+using System.IO;
+using System.IO.Ports;
+using System.Threading;
 
 namespace Arduimmer
 {
@@ -65,6 +68,32 @@ namespace Arduimmer
 		{
 			this.Write("Dev?");
 			return Convert.ToUInt16(this.ReadLine(), 16);
+		}
+
+		private void EnterProgrammingMode()
+		{
+			if (!this.Ping())
+				throw new IOException("Can not communicate with Arduino");
+
+			this.Write("Goo!");
+		}
+
+		private void ExitProgrammingMode()
+		{
+			if (!this.Ping())
+				throw new IOException("Can not communicate with Arduino");
+
+			this.Write("End!");
+		}
+
+		private bool EraseChip()
+		{
+			if (!this.Ping())
+				throw new IOException("Can not communicate with Arduino");
+
+			this.Write("Era!");
+			Thread.Sleep(1000);
+			return this.ReadLine() == "Erase done";
 		}
 	}
 }

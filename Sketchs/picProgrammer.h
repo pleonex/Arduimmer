@@ -22,6 +22,9 @@
 #define pinPGD 7
 #define pinVPP 2
 
+#define TIME_P10   100
+#define TIME_P11  5000
+
 #define InstCore                 0x0
 #define InstShiftOut             0x2
 #define InstTblRead              0x8
@@ -32,3 +35,14 @@
 #define InstTblWritePostIncr     0xD
 #define InstTblWritePostIncrProg 0xE
 #define InstTblWriteProg         0xF
+
+#define ERASE_CHIP           0x3F8Fu
+#define ERASE_DATA_EEPROM    0x0084u
+#define ERASE_BOOT_BLOCK     0x0081u
+#define ERASE_CONF_BITS      0x0082u
+#define ERASE_CODE_EEPROM_0  0x0180u
+#define ERASE_CODE_EEPROM_1  0x0280u
+#define ERASE_CODE_EEPROM_2  0x0480u
+#define ERASE_CODE_EEPROM_3  0x0880u
+#define ERASE_CODE_EEPROM_4  0x1080u
+#define ERASE_CODE_EEPROM_5  0x2080u
