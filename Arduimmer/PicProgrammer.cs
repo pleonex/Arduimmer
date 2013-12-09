@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------
-// <copyright file="Program.cs" company="none">
+// <copyright file="PicProgrammer.cs" company="none">
 // Copyright (C) 2013
 //
 //   This program is free software: you can redistribute it and/or modify
@@ -17,27 +17,55 @@
 // </copyright>
 // <author>pleoNeX</author>
 // <email>benito356@gmail.com</email>
-// <date>27/11/2013</date>
+// <date>09/12/2013</date>
 //-----------------------------------------------------------------------
 using System;
-using System.IO.Ports;
 
 namespace Arduimmer
 {
-	public static class MainClass
+	public class PicProgrammer : ArduinoCommunication
 	{
-		public static void Main(string[] args)
+		public PicProgrammer(string portName)
+			: base(portName)
 		{
-			PicProgrammer programmer = PicProgrammer.SearchArduino();
-			if (programmer == null) {
-				Console.WriteLine("Can't find Arduino");
-				return;
+		}
+
+		public static PicProgrammer SearchArduino()
+		{
+			// DOES NOT RETURN /dev/ttyACM0 !!1!
+			//string[] portNames = SerialPort.GetPortNames(); 
+			string[] portNames = { "/dev/ttyACM0" };
+
+			foreach (string portName in portNames) {
+				PicProgrammer arduino = new PicProgrammer(portName);
+				try {
+					arduino.Open();
+					bool isArduino = arduino.Ping();
+					arduino.Close();
+
+					if (isArduino)
+						return arduino;
+				} catch { }
 			}
 
-			programmer.Open();
-			Console.WriteLine("Arduino found at port: {0}", programmer.PortName);
-			Console.WriteLine("PIC ID: {0:X}h", programmer.GetDeviceId());
-			programmer.Close();
+			return null;
+		}
+
+		public bool Ping()
+		{
+			this.Write("Hey!");
+
+			if (this.ReadLine() == "Yes?")
+				return true;
+			else
+				return false;
+		}
+
+		public ushort GetDeviceId()
+		{
+			this.Write("Dev?");
+			return Convert.ToUInt16(this.ReadLine(), 16);
 		}
 	}
 }
+

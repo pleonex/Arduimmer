@@ -56,27 +56,6 @@ namespace Arduimmer
 			private set;
 		}
 
-		public static ArduinoCommunication SearchArduino()
-		{
-			// DOES NOT RETURN /dev/ttyACM0 !!1!
-			//string[] portNames = SerialPort.GetPortNames(); 
-			string[] portNames = { "/dev/ttyACM0" };
-
-			foreach (string portName in portNames) {
-				ArduinoCommunication arduino = new ArduinoCommunication(portName);
-				try {
-					arduino.Open();
-					bool isArduino = arduino.Ping();
-					arduino.Close();
-
-					if (isArduino)
-						return arduino;
-				} catch { }
-			}
-
-			return null;
-		}
-
 		public void Open()
 		{
 			this.port.Open();
@@ -87,14 +66,14 @@ namespace Arduimmer
 			this.port.Close();
 		}
 
-		public bool Ping()
+		protected void Write(string s)
 		{
-			this.port.Write("Hey!");
+			this.port.Write(s);
+		}
 
-			if (this.port.ReadLine() == "Yes?")
-				return true;
-			else
-				return false;
+		protected string ReadLine()
+		{
+			return this.port.ReadLine();
 		}
 	}
 }

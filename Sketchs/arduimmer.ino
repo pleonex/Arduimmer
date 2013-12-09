@@ -42,6 +42,10 @@ void serialCommands() {
      ping();
    else if (strcmp(command, "Dev?") == 0)
      showDeviceId();
+   else if (strcmp(command, "Goo!") == 0)
+     enterLowVoltageIcsp();
+   else if (strcmp(command, "End!") == 0)
+     exitLowVoltageIcsp();
 }
 
 void ping() {
@@ -56,6 +60,5 @@ void showDeviceId() {
   
   exitLowVoltageIcsp();
   
-  Serial.print("Device ID: 0x");
   Serial.println(deviceId, HEX);
 }

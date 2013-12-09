@@ -39,6 +39,7 @@
     <Compile Include="Hex.cs" />
     <Compile Include="HexRecord.cs" />
     <Compile Include="ArduinoCommunication.cs" />
+    <Compile Include="PicProgrammer.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
