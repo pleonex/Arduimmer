@@ -51,25 +51,11 @@ void ping() {
 void showDeviceId() {
   enterLowVoltageIcsp();
   
-  // 1º Set 3FFFFEh address into TBLPTR
-  sendInstruction(InstCore, 0x0E00 | 0x3F); // MOVLW 0x3F
-  sendInstruction(InstCore, 0x6EF8);        // MOVWF TBLPTRU
-  sendInstruction(InstCore, 0x0E00 | 0xFF); // MOVLW 0xFF
-  sendInstruction(InstCore, 0x6EF7);        // MOVWF TBLPTRH
-  sendInstruction(InstCore, 0x0E00 | 0xFE); // MOVLW 0xFE
-  sendInstruction(InstCore, 0x6EF6);        // MOVWF TBLPTRL
-  
-  // 2º Read Id
-  short deviceId = 0;
-  deviceId = sendInstruction(InstTblReadPostIncr, 0);
-  deviceId |= sendInstruction(InstTblReadPostIncr, 0) << 8;
+  short deviceId = readIncrMemory(0x3FFFFEL);
+  deviceId |= readIncrMemory() << 8;
   
   exitLowVoltageIcsp();
   
   Serial.print("Device ID: 0x");
   Serial.println(deviceId, HEX);
 }
-
-
-
-

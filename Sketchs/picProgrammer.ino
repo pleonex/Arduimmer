@@ -100,3 +100,36 @@ byte sendInstruction(byte instr, short payload) {
     sendBits(payload, 16);
   }
 }
+
+void setTblPtr(long addr) {
+  sendInstruction(InstCore, 0x0E00 | ((addr >> 16) & 0xFF)); // MOVLW 0x3F
+  sendInstruction(InstCore, 0x6EF8);        // MOVWF TBLPTRU
+  sendInstruction(InstCore, 0x0E00 | ((addr >>  8) & 0xFF)); // MOVLW 0xFF
+  sendInstruction(InstCore, 0x6EF7);        // MOVWF TBLPTRH
+  sendInstruction(InstCore, 0x0E00 | ((addr >>  0) & 0xFF)); // MOVLW 0xFE
+  sendInstruction(InstCore, 0x6EF6);        // MOVWF TBLPTRL
+}
+
+byte readIncrMemory(long addr) {
+  // 1º Set address into TBLPTR
+  setTblPtr(addr);
+  
+  // 2º Read with Post-Increment
+  return sendInstruction(InstTblReadPostIncr, 0);
+}
+
+byte readIncrMemory() {
+  return sendInstruction(InstTblReadPostIncr, 0); 
+}
+
+byte readMemory(long addr) {
+  // 1º Set address into TBLPTR
+  setTblPtr(addr);
+  
+  // 2º Read
+  return sendInstruction(InstTblRead, 0);
+}
+
+byte readMemory() {
+ return sendInstruction(InstTblRead, 0); 
+}
