@@ -70,6 +70,26 @@ namespace Arduimmer
 			return Convert.ToUInt16(this.ReadLine(), 16);
 		}
 
+		public void CodeDevice(Hex code)
+		{
+			// 1º Enter Programming mode
+			this.EnterProgrammingMode();
+
+			// 2º Erase chip
+			this.EraseChip();
+
+			// 3º Send & verify code and data EEPROM
+			this.WriteCode(code);
+			this.VerifyCode(code);
+
+			// 4º Send & verify configuration bits
+			this.WriteConfBits(code);
+			this.VerifyConfBits(code);
+
+			// 5º Exit Programming mode
+			this.ExitProgrammingMode();
+		}
+
 		private void EnterProgrammingMode()
 		{
 			if (!this.Ping())
@@ -94,6 +114,26 @@ namespace Arduimmer
 			this.Write("Era!");
 			Thread.Sleep(1000);
 			return this.ReadLine() == "Erase done";
+		}
+
+		private void WriteCode(Hex code)
+		{
+			throw new NotImplementedException();
+		}
+
+		private void VerifyCode(Hex code)
+		{
+			throw new NotImplementedException();
+		}
+
+		private void WriteConfBits(Hex code)
+		{
+			throw new NotImplementedException();
+		}
+
+		private void VerifyConfBits(Hex code)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }
