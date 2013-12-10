@@ -116,7 +116,7 @@ namespace Arduimmer
 			return this.ReadLine() == "Erase done";
 		}
 
-		public void WriteCode(Hex code)
+		private void WriteCode(Hex code)
 		{
 			// Sends the command
 			this.Write("Cod!");
