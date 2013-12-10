@@ -35,9 +35,22 @@ namespace Arduimmer
 
 		public static PicProgrammer SearchArduino()
 		{
-			// DOES NOT RETURN /dev/ttyACM0 !!1!
-			//string[] portNames = SerialPort.GetPortNames(); 
-			string[] portNames = { "/dev/ttyACM0", "/dev/ttyACM1" };
+			string[] portNames = null;
+			switch (Environment.OSVersion.Platform) {
+			case PlatformID.Win32NT:
+			case PlatformID.Win32S:
+			case PlatformID.WinCE:			// Who knows...?
+			case PlatformID.Win32Windows:
+				portNames = SerialPort.GetPortNames(); 
+				break;
+
+			case PlatformID.Unix:
+				portNames = System.IO.Directory.GetFiles("/dev", "ttyACM*");
+				break;
+
+			default:
+				throw new NotSupportedException("OS not supported");
+			}
 
 			foreach (string portName in portNames) {
 				PicProgrammer arduino = new PicProgrammer(portName);
