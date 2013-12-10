@@ -37,7 +37,7 @@ namespace Arduimmer
 		{
 			// DOES NOT RETURN /dev/ttyACM0 !!1!
 			//string[] portNames = SerialPort.GetPortNames(); 
-			string[] portNames = { "/dev/ttyACM0" };
+			string[] portNames = { "/dev/ttyACM0", "/dev/ttyACM1" };
 
 			foreach (string portName in portNames) {
 				PicProgrammer arduino = new PicProgrammer(portName);
@@ -57,11 +57,7 @@ namespace Arduimmer
 		public bool Ping()
 		{
 			this.Write("Hey!");
-
-			if (this.ReadLine() == "Yes?")
-				return true;
-			else
-				return false;
+			return this.ReadLine() == "Yes?";
 		}
 
 		public ushort GetDeviceId()
@@ -116,9 +112,32 @@ namespace Arduimmer
 			return this.ReadLine() == "Erase done";
 		}
 
-		private void WriteCode(Hex code)
+		public void WriteCode(Hex code)
 		{
-			throw new NotImplementedException();
+			this.Write("Cod!");
+			foreach (HexRecord record in code.Records) {
+				if (record.RecordType == RecordType.Data) {
+					this.Write((uint)record.Address);
+					this.Write((byte)record.Data.Length);
+					this.Write(record.Data);
+				} else if (record.RecordType != RecordType.Data) {
+					this.Write((uint)0xFFFFFFFF);
+				}
+
+				string ack = this.ReadLine();
+				if (ack != "ACK") {
+					Console.WriteLine("NO ACK! {0}", ack);
+					return;
+				}
+
+				if (this.DataAvailable > 0) {
+					Thread.Sleep(1000);
+					Console.WriteLine(this.ReadAll());
+				}
+
+				if (record.RecordType != RecordType.Data)
+					break;
+			}
 		}
 
 		private void VerifyCode(Hex code)

@@ -69,12 +69,12 @@ namespace Arduimmer
 			record.Address = Convert.ToUInt16(str.Substring(3, 4), 16);
 
 			// Get type (RECTYPE)
-			record.RecordType = (RecordType)Convert.ToByte(str.Substring(7, 1), 16);
+			record.RecordType = (RecordType)Convert.ToByte(str.Substring(7, 2), 16);
 
 			// Get data
 			record.Data = new byte[length];
 			for (int i = 0; i < length; i++)
-				record.Data[i] = Convert.ToByte(str.Substring(8 + i * 2, 2), 16);
+				record.Data[i] = Convert.ToByte(str.Substring(9 + i * 2, 2), 16);
 
 			// TODO: Check shecksum
 

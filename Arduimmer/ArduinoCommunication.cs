@@ -30,7 +30,7 @@ namespace Arduimmer
 		private const Parity   ParityMode   = Parity.None;
 		private const int      DataBits     = 8;
 		private const StopBits StopBitsMode = StopBits.One;
-		private const int      ReadTimeOut  = 500;
+		private const int      ReadTimeOut  = 1000;
 		private const string   NewLine      = "\r\n";
 
 		private SerialPort port;
@@ -56,6 +56,10 @@ namespace Arduimmer
 			private set;
 		}
 
+		protected int DataAvailable {
+			get { return this.port.BytesToRead; }
+		}
+
 		public void Open()
 		{
 			this.port.Open();
@@ -63,6 +67,8 @@ namespace Arduimmer
 
 		public void Close()
 		{
+			if (this.port.BytesToRead > 0)
+				Console.WriteLine("Trash: {0}", this.port.ReadExisting());
 			this.port.Close();
 		}
 
@@ -71,9 +77,29 @@ namespace Arduimmer
 			this.port.Write(s);
 		}
 
+		protected void Write(byte v)
+		{
+			this.Write(BitConverter.ToString(new byte[] { v }));
+		}
+
+		protected void Write(byte[] v)
+		{
+			this.Write(BitConverter.ToString(v).Replace("-", ""));
+		}
+
+		protected void Write(uint v)
+		{
+			this.Write(BitConverter.GetBytes(v));
+		}
+
 		protected string ReadLine()
 		{
 			return this.port.ReadLine();
+		}
+
+		protected string ReadAll()
+		{
+			return this.port.ReadExisting();
 		}
 	}
 }

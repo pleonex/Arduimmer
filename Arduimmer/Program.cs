@@ -28,6 +28,7 @@ namespace Arduimmer
 	{
 		public static void Main(string[] args)
 		{
+			Hex code = Hex.FromFile("/home/benito/test.hex");
 			PicProgrammer programmer = PicProgrammer.SearchArduino();
 			if (programmer == null) {
 				Console.WriteLine("Can't find Arduino");
@@ -37,7 +38,11 @@ namespace Arduimmer
 			programmer.Open();
 			Console.WriteLine("Arduino found at port: {0}", programmer.PortName);
 			Console.WriteLine("PIC ID: {0:X}h", programmer.GetDeviceId());
+
+			programmer.WriteCode(code);
 			programmer.Close();
+
+			Console.WriteLine("Bye!");
 		}
 	}
 }

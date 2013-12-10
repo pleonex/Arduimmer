@@ -20,6 +20,7 @@
 // <date>27/11/2013</date>
 //-----------------------------------------------------------------------
 using System;
+using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -28,11 +29,15 @@ namespace Arduimmer
 {
 	public class Hex
 	{
-		public List<HexRecord> records;
+		private List<HexRecord> records;
 
 		public Hex()
 		{
 			this.records = new List<HexRecord>();
+		}
+
+		public ReadOnlyCollection<HexRecord> Records {
+			get { return new ReadOnlyCollection<HexRecord>(this.records); }
 		}
 
 		public static Hex FromFile(string hexPath)
