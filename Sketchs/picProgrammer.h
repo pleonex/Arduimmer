@@ -22,6 +22,7 @@
 #define pinPGD 7
 #define pinVPP 2
 
+#define TIME_P9   1000
 #define TIME_P10   100
 #define TIME_P11  5000
 
@@ -35,7 +36,7 @@
 #define WRITE_BUFFER 32
 
 // ONLY FOR: PIC18Fx5x0
-#define BOOT_BLOCK 0x07FF;
+#define BOOT_BLOCK 0x07FF
 
 #define InstCore                 0x0
 #define InstShiftOut             0x2

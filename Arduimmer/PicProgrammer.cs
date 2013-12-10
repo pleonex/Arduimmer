@@ -56,8 +56,12 @@ namespace Arduimmer
 
 		public bool Ping()
 		{
-			this.Write("Hey!");
-			return this.ReadLine() == "Yes?";
+			try {
+				this.Write("Hey!");
+				return this.ReadLine() == "Yes?";
+			} catch {
+				return false;
+			}
 		}
 
 		public ushort GetDeviceId()
@@ -114,29 +118,51 @@ namespace Arduimmer
 
 		public void WriteCode(Hex code)
 		{
+			// Sends the command
 			this.Write("Cod!");
+
+			uint nextAddress = 0xFFFFFFFF;
 			foreach (HexRecord record in code.Records) {
-				if (record.RecordType == RecordType.Data) {
+				if (nextAddress == 0xFFFFFFFF)
+					nextAddress = record.Address;
+
+				if (record.RecordType == RecordType.Eof || (record.Address & 0xFF0000) != 0x00) {
+					// If there is not more data or the data is not in the code memory...
+					this.Write((uint)0xFFFFFFFF);
+				} else {
+					// If the address is no contiguous...
+					//  Arduino must finish the current programming
+					//  and start again
+					if (nextAddress != record.Address) {
+						this.Write((uint)0xFFFFFFFF);
+
+						// Waits for Aduino
+						bool ready = false;
+						for (int i = 0; i < 5 && !ready; i++) {
+							Thread.Sleep(500);
+							ready = this.Ping();
+						}
+
+						if (!ready)
+							throw new Exception("Arduino does not respond");
+
+						// Let's start again
+						this.Write("Cod!");
+						nextAddress = record.Address;
+					} 
+
+					// Writes code to the buffer
 					this.Write((uint)record.Address);
 					this.Write((byte)record.Data.Length);
 					this.Write(record.Data);
-				} else if (record.RecordType != RecordType.Data) {
-					this.Write((uint)0xFFFFFFFF);
+					nextAddress += (uint)record.Data.Length;
 				}
 
-				string ack = this.ReadLine();
-				if (ack != "ACK") {
-					Console.WriteLine("NO ACK! {0}", ack);
-					return;
-				}
+				Thread.Sleep(100);	// Waits for Arduino
 
-				if (this.DataAvailable > 0) {
-					Thread.Sleep(1000);
+				// Checks if Arduino wants to show its buffer
+				if (this.DataAvailable > 0)
 					Console.WriteLine(this.ReadAll());
-				}
-
-				if (record.RecordType != RecordType.Data)
-					break;
 			}
 		}
 

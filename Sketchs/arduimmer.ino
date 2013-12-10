@@ -49,7 +49,7 @@ void serialCommands() {
    else if (strcmp(command, "Era!") == 0)
      perfomBulkErase(ERASE_CHIP);
    else if (strcmp(command, "Cod!") == 0)
-     writeCode();
+     writeCode(WRITE_BUFFER, BOOT_BLOCK);
  
  // Clear buffer
  while (Serial.available() > 0)
@@ -93,35 +93,22 @@ byte serialReceiveData(byte buffer[], int idx) {
   return bufferLength;
 }
 
-void writeCode() {
+void writeCode(int bufferLength, int offset) {
   byte buffer[64 * 16];
   int  bufferIdx = 0;
-  unsigned long address;
+  unsigned long address = 0;
   unsigned long tmpAddr;
   boolean contReceiving;
   boolean contProgramming = true;
   
   do {
-    // Reset variables
     contReceiving = true;
-    if (bufferIdx >= WRITE_BUFFER) {
-      // Copy not written data to the first positions
-      for (int i = 0; i < bufferIdx - WRITE_BUFFER; i++)
-        buffer[i] = buffer[WRITE_BUFFER + i];
-      bufferIdx -= WRITE_BUFFER;
-      address += WRITE_BUFFER;
-    } else {
-      address = 0;
-      bufferIdx = 0;
-    }
-    
-    // 1º Get address and code
     do {
       byte bytesRead;
       
       tmpAddr = serialReceiveAddress(); 
       if (address == 0)
-        address = tmpAddr + BOOT_BLOCK;
+        address = tmpAddr + offset;
         
       if (tmpAddr != 0xFFFFFFFFuL) {
         bytesRead = serialReceiveData(buffer, bufferIdx);
@@ -129,7 +116,7 @@ void writeCode() {
       }
       
       // If the Write Buffer is full
-      if (bufferIdx >= WRITE_BUFFER)
+      if (bufferIdx >= bufferLength)
         contReceiving = false;
         
       // If the PC tell you "There is not more data to write atm"
@@ -137,24 +124,43 @@ void writeCode() {
         contReceiving   = false;
         contProgramming = false;
       }
-      
-      Serial.println("ACK");
     } while (contReceiving);
     
-    if (bufferIdx > 0) {
+    // Write buffer
+    // Loop specially useful when write buffer is 8 bytes
+    // because we are receiving 16 bytes but only writing 8 bytes
+    do {
+      if (bufferIdx <= 0)
+        break;
+      
+      int bytesToWrite = (bufferLength < bufferIdx) ? bufferLength : bufferIdx;
+      
       // DEBUG
       Serial.print("Address: 0x");        Serial.println(address, HEX);
       Serial.print("Buffer length: 0x");  Serial.println(bufferIdx, HEX);
-      for (int i = 0; i < bufferIdx; i++) {
+      for (int i = 0; i < bytesToWrite; i++) {
         if (buffer[i] < 0x10)
           Serial.print('0');
         Serial.print(buffer[i], HEX);
       }
       Serial.println("");
+      // END DEBUG
      
       // 3º Write code into memory
       // UNDONE
-    }
+      
+      if (bufferIdx >= bufferLength) {
+        // Copy not written data to the first positions
+        for (int i = 0; i < bufferIdx - bufferLength; i++)
+          buffer[i] = buffer[bufferLength + i];
+        
+        bufferIdx -= bufferLength;
+        address   += bufferLength;
+      } else {
+        address   = 0;
+        bufferIdx = 0;
+      }
+    } while (bufferIdx >= bufferLength);
   } while (contProgramming);
   
   Serial.println("Done!");
