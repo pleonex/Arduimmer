@@ -51,6 +51,7 @@ namespace Arduimmer
 			Console.WriteLine("This program comes with ABSOLUTELY NO WARRANTY.");
 			Console.WriteLine("This is free software, and you are welcome to redistribute it");
 			Console.WriteLine("under certain conditions.");
+			Console.WriteLine();
 		}
 
 		private static void ShowHelp()
@@ -60,6 +61,7 @@ namespace Arduimmer
 
 		private static void CodeDevice(string hexPath)
 		{
+			Hex code = Hex.FromFile(hexPath);
 			PicProgrammer programmer = PicProgrammer.SearchArduino();
 			if (programmer == null) {
 				Console.WriteLine("ERROR Can not find Arduino device.");
@@ -69,9 +71,11 @@ namespace Arduimmer
 			programmer.Open();
 			Console.WriteLine("Arduino found at port: {0}", programmer.PortName);
 			Console.WriteLine("PIC ID: {0:X}h", programmer.GetDeviceId());
+			Console.WriteLine();
 
-			Hex code = Hex.FromFile(hexPath);
-			programmer.CodeDevice(code);
+			try {
+				programmer.CodeDevice(code);
+			} catch { }
 
 			programmer.Close();
 		}

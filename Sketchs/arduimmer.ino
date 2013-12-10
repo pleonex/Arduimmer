@@ -107,14 +107,18 @@ void writeCode(int bufferLength, int offset) {
   boolean contProgramming = true;
   
   do {
+    
+    // First receive data from PC
     contReceiving = true;
     do {
       byte bytesRead;
       
+      // Reads address (stop command -> address 0xFFFFFFFF)
       tmpAddr = serialReceiveAddress(); 
       if (address == 0 && tmpAddr != 0xFFFFFFFFuL)
         address = tmpAddr + offset;
-        
+      
+      // If no "stop command", reads data
       if (tmpAddr != 0xFFFFFFFFuL) {
         bytesRead = serialReceiveData(buffer, bufferIdx);
         bufferIdx += bytesRead;
@@ -124,65 +128,69 @@ void writeCode(int bufferLength, int offset) {
       if (bufferIdx >= bufferLength)
         contReceiving = false;
         
-      // If the PC tell you "There is not more data to write atm"
+      // If the PC tells you "There is not more data to write" (stop command)
       if (tmpAddr == 0xFFFFFFFFuL) {
         contReceiving   = false;
         contProgramming = false;
       }
     } while (contReceiving);
     
-    // Write buffer
+    // Write buffer into memory
     // Loop specially useful when write buffer is 8 bytes
     // because we are receiving 16 bytes but only writing 8 bytes
     do {
       if (bufferIdx <= 0)
         break;
-      
-      int bytesToWrite = (bufferLength < bufferIdx) ? bufferLength : bufferIdx;
-      
-      // DEBUG
-      /*Serial.print("Address: 0x");        Serial.println(address, HEX);
-      Serial.print("Buffer length: 0x");  Serial.println(bufferIdx, HEX);
-      for (int i = 0; i < bytesToWrite; i++) {
-        if (buffer[i] < 0x10)
-          Serial.print('0');
-        Serial.print(buffer[i], HEX);
-      }
-      Serial.println("");*/
-      // END DEBUG
-     
-      // 3º Write code into memory
+                
       enterLowVoltageIcsp();
+      
+      // Writes data
+      int bytesToWrite = (bufferLength < bufferIdx) ? bufferLength : bufferIdx;
       progCodeMemory(address, buffer, bytesToWrite);
+      
+      // Reads written data to verify it
+      byte b;
       for (int i = 0; i < bytesToWrite; i++) {
-        byte b = 0;
+        // If the first iteration, writes the address too
         if (i == 0)
           b = readIncrMemory(address);
         else
           b = readIncrMemory();
           
+        // Checks if they are the same. If not, shows error and quit.
         if (b != buffer[i]) {
-          Serial.print("Error at: "); Serial.println(address + i, HEX);
-          Serial.print(buffer[i], HEX); Serial.print(" "); Serial.println(b, HEX);
+          Serial.print("\t* ERROR checking at: 0x"); Serial.print(address + i, HEX);
+          Serial.print(" | Tried: ");                Serial.print(buffer[i], HEX);
+          Serial.print(" | Read: ");                 Serial.println(b, HEX);
+          return;
         }
       }
+      
       exitLowVoltageIcsp();
       
+      // Show how good is going everything :D
+      Serial.print("\t* |");
+      if (bytesToWrite < 10)
+        Serial.print("0");
+      Serial.print(bytesToWrite);
+      Serial.println(" bytes written correctly");
+      
+      // Copy not written data to the first positions (update buffer)
       if (bufferIdx >= bufferLength) {
-        // Copy not written data to the first positions
         for (int i = 0; i < bufferIdx - bufferLength; i++)
           buffer[i] = buffer[bufferLength + i];
         
         bufferIdx -= bufferLength;
         address   += bufferLength;
       } else {
-        address   = 0;
         bufferIdx = 0;
+        address   = 0;
       }
+    
     } while (bufferIdx >= bufferLength);
+    
+    // And repeats again until PC sends a null address
   } while (contProgramming);
-  
-  //Serial.println("Done!");
 }
 
 void showDeviceId() {

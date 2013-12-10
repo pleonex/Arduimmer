@@ -35,6 +35,7 @@ namespace Arduimmer
 
 		public static PicProgrammer SearchArduino()
 		{
+			// Gets a list of port names
 			string[] portNames = null;
 			switch (Environment.OSVersion.Platform) {
 			case PlatformID.Win32NT:
@@ -52,6 +53,7 @@ namespace Arduimmer
 				throw new NotSupportedException("OS not supported");
 			}
 
+			// Tries to do a ping in each port until it receives a response
 			foreach (string portName in portNames) {
 				PicProgrammer arduino = new PicProgrammer(portName);
 				try {
@@ -85,83 +87,74 @@ namespace Arduimmer
 
 		public void CodeDevice(Hex code)
 		{
+			Console.WriteLine("Programming sequence started");
+
 			// 1º Erase chip
 			this.EraseChip();
 
-			// 2º Send & verify code and data EEPR
+			// 2º Send & verify code
+			Console.WriteLine("\t* Starting to write code");
 			this.WriteCode(code);
+			Console.WriteLine("\t* Code written correctly");
 
 			// 3º Send & verify configuration bits
+			Console.WriteLine("\t* Starting to write conf bits");
 			this.WriteConfBits(code);
-		}
+			Console.WriteLine("\t* Conf bits written correctly");
 
-		private void EnterProgrammingMode()
-		{
-			if (!this.Ping())
-				throw new IOException("Can not communicate with Arduino");
-
-			this.Write("Goo!");
-		}
-
-		private void ExitProgrammingMode()
-		{
-			if (!this.Ping())
-				throw new IOException("Can not communicate with Arduino");
-
-			this.Write("End!");
+			Console.WriteLine("Device programmed correctly ;)");
 		}
 
 		private void EraseChip()
 		{
+			// Check if Arduino is ready
 			if (!this.Ping())
-				throw new IOException("Can not communicate with Arduino");
+				throw new IOException("ERROR Can not communicate with Arduino!");
 
+			// Send Erase Chip command and wait for response
 			this.Write("Era!");
 			Thread.Sleep(1000);
-			Console.WriteLine(this.ReadLine());
+			Console.WriteLine("\t* {0}", this.ReadLine());
 		}
 
 		private void WriteCode(Hex code)
 		{
-			// Sends the command
+			// Sends Write Code command
 			this.Write("Cod!");
 
+			string info = string.Empty;
 			uint nextAddress = 0xFFFFFFFF;
 			foreach (HexRecord record in code.Records) {
+				// Initialize next address
 				if (nextAddress == 0xFFFFFFFF)
 					nextAddress = record.Address;
 
-				if (record.RecordType == RecordType.Eof || (record.Address & 0xFF0000) != 0x00) {
+				if (record.RecordType == RecordType.Eof || (record.Address & 0xFF0000) != 0x000000) {
 					// If there is not more data or the data is not in the code memory...
+					//  sends stop command (null address)
 					this.Write((uint)0xFFFFFFFF);
 				} else {
-					// If the address is no contiguous...
-					//  Arduino must finish the current programming
-					//  and start again
 					if (nextAddress != record.Address) {
+						// If the address is no contiguous, Arduino must finish the current
+						//  programming sequence and start another one
 						this.Write((uint)0xFFFFFFFF);
 
-						Thread.Sleep(1000);
-						// Checks if Arduino wants to show its buffer
-						if (this.DataAvailable > 0)
-							Console.WriteLine(this.ReadAll());
+						Thread.Sleep(100);	// Waits for Arduino
 
-						// Waits for Aduino
-						bool ready = false;
-						for (int i = 0; i < 5 && !ready; i++) {
-							Thread.Sleep(500);
-							ready = this.Ping();
+						// Checks if Arduino wants to show info
+						if (this.DataAvailable > 0) {
+							info = this.ReadAll();
+							Console.Write(info);
+							if (info.Contains("ERROR"))
+								throw new IOException();
 						}
-
-						if (!ready)
-							throw new Exception("Arduino does not respond");
 
 						// Let's start again
 						this.Write("Cod!");
 						nextAddress = record.Address;
 					} 
 
-					// Writes code to the buffer
+					// Writes code into the buffer
 					this.Write((uint)record.Address);
 					this.Write((byte)record.Data.Length);
 					this.Write(record.Data);
@@ -170,35 +163,46 @@ namespace Arduimmer
 
 				Thread.Sleep(100);	// Waits for Arduino
 
-				// Checks if Arduino wants to show its buffer
-				if (this.DataAvailable > 0)
-					Console.WriteLine(this.ReadAll());
+				// Checks if Arduino wants to show info
+				if (this.DataAvailable > 0) {
+					info = this.ReadAll();
+					Console.Write(info);
+					if (info.Contains("ERROR"))
+						throw new IOException();
+				}
 			}
 		}
 
 		private void WriteConfBits(Hex code)
 		{
-			// Sends the command
+			// Sends Write Configuration Bits command
 			this.Write("Cnf!");
 
+			string info = string.Empty;
 			foreach (HexRecord record in code.Records) {
 				if (record.RecordType == RecordType.Eof) {
-					// If there is not more data
+					// If there is not more data, sends null address
 					this.Write((uint)0xFFFFFFFF);
 				} else if ((record.Address & 0x00FF0000) == 0x00300000) {
-					// Writes configuration bits to the buffer
+					// Only if the data is in the Configuration bits region... 
+					//  writes configuration bits into the buffer
 					this.Write((uint)record.Address);
 					this.Write((byte)record.Data.Length);
 					this.Write(record.Data);
 				} else {
+					// Else continue checking records
 					continue;
 				}
 
 				Thread.Sleep(100);	// Waits for Arduino
 
-				// Checks if Arduino wants to show its buffer
-				if (this.DataAvailable > 0)
-					Console.WriteLine(this.ReadAll());
+				// Checks if Arduino wants to show info
+				if (this.DataAvailable > 0) {
+					info = this.ReadAll();
+					Console.Write(info);
+					if (info.Contains("ERROR"))
+						throw new IOException();
+				}
 			}
 		}
 	}
