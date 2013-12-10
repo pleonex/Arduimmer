@@ -52,7 +52,7 @@ void serialCommands() {
    else if (strcmp(command, "Era!") == 0)
      perfomBulkErase(ERASE_CHIP);
    else if (strcmp(command, "Cod!") == 0)
-     writeCode(WRITE_BUFFER, BOOT_BLOCK);
+     writeCode(WRITE_BUFFER, 0);
    else if (strcmp(command, "Cnf!") == 0)
      writeCode(1, 0);
  
