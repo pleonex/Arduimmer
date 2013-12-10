@@ -176,6 +176,33 @@ void writeProgMemory(unsigned int data) {
   sendInstruction(InstTblWriteProg, data); 
 }
 
+void progCodeMemory(long addr, byte buf[], int bufLen) {
+  // Configure Device for Writes
+  sendInstruction(InstCore, 0x8EA6);  // BSF  EECON1, EEPGD
+  sendInstruction(InstCore, 0x9CA6);  // BCF  EECON1, CFGS
+  
+  // Set address
+  setTblPtr(addr);
+  
+  // Load data into buffer
+  int i;
+  for (i = 0; i < (bufLen - 2); i += 2) {
+    unsigned int data = (buf[i] << 8) | buf[i+1];
+    writeIncrMemory(data);
+  }
+  
+  // Write last two bytes and start programming
+  unsigned int data = (buf[i] << 8) | buf[i+1];
+  writeProgMemory(data);
+  
+  sendBits(0, 4);
+  digitalWrite(pinPGC, HIGH);
+  delayMicroseconds(TIME_P9);
+  digitalWrite(pinPGC, LOW);
+  delayMicroseconds(TIME_P10);
+  sendBits(0, 16);
+}
+
 /*---------------------------------------------------------------*/
 /*                      Erase functions                          */
 /*---------------------------------------------------------------*/
