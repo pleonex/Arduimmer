@@ -52,20 +52,33 @@ namespace Arduimmer
 
 			Hex hex = new Hex();
 
+			// Split lines
 			hexText = hexText.Replace("\r", "");
 			string[] lines = hexText.Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
-			foreach (string line in lines)
-				hex.AddRecord(line);
+
+			uint lba = 0;
+			foreach (string line in lines) {
+				if (string.IsNullOrEmpty(line) || line[0] != HexRecord.Mark)
+					continue;
+
+				HexRecord record = HexRecord.FromAsciiString(line);
+				if (record.RecordType == RecordType.Data) {
+					record.Address = (lba + record.Address) % 0xFFFFFFFF;
+				} else if (record.RecordType == RecordType.ExtendedLinearAddr) {
+					lba = (uint)((record.Data[0] << 24) | (record.Data[1] << 16));
+					continue;
+				} else if (record.RecordType != RecordType.Eof)
+					throw new FormatException("The HEX file contains unknown fields.");
+
+				hex.AddRecord(record);
+			}
 
 			return hex;
 		}
 
-		public void AddRecord(string line)
+		public void AddRecord(HexRecord record)
 		{
-			if (string.IsNullOrEmpty(line) || line[0] != HexRecord.Mark)
-				return;
-
-			this.records.Add(HexRecord.FromAsciiString(line));
+			this.records.Add(record);
 		}
 	}
 }

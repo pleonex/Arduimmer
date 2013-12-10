@@ -38,7 +38,7 @@ namespace Arduimmer
 			get { return ':'; }
 		}
 
-		public ushort Address {
+		public uint Address {
 			get;
 			set;
 		}
