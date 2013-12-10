@@ -20,7 +20,7 @@
 // <date>27/11/2013</date>
 //-----------------------------------------------------------------------
 using System;
-using System.IO.Ports;
+using System.IO;
 
 namespace Arduimmer
 {
@@ -28,10 +28,41 @@ namespace Arduimmer
 	{
 		public static void Main(string[] args)
 		{
-			Hex code = Hex.FromFile("/home/benito/test.hex");
+			ShowHeader();
+
+			if (args.Length != 1) {
+				Console.WriteLine("ERROR Invalid number of arguments!");
+				ShowHelp();
+			} else if (!File.Exists(args[0])) {
+				Console.WriteLine("ERROR File not found. {0}", args[0]);
+			} else {
+				CodeDevice(args[0]);
+			}
+
+			Console.WriteLine();
+			Console.WriteLine("Good PICing!");
+			Console.WriteLine("Press any key to quit. . .");
+			Console.ReadKey(true);
+		}
+
+		private static void ShowHeader()
+		{
+			Console.WriteLine("Arduimmer  Copyright (C) 2013  Benito Palacios (aka pleonex)");
+			Console.WriteLine("This program comes with ABSOLUTELY NO WARRANTY.");
+			Console.WriteLine("This is free software, and you are welcome to redistribute it");
+			Console.WriteLine("under certain conditions.");
+		}
+
+		private static void ShowHelp()
+		{
+			Console.WriteLine("USAGE: Arduimmer.exe pathToHexFile");
+		}
+
+		private static void CodeDevice(string hexPath)
+		{
 			PicProgrammer programmer = PicProgrammer.SearchArduino();
 			if (programmer == null) {
-				Console.WriteLine("Can't find Arduino");
+				Console.WriteLine("ERROR Can not find Arduino device.");
 				return;
 			}
 
@@ -39,10 +70,10 @@ namespace Arduimmer
 			Console.WriteLine("Arduino found at port: {0}", programmer.PortName);
 			Console.WriteLine("PIC ID: {0:X}h", programmer.GetDeviceId());
 
+			Hex code = Hex.FromFile(hexPath);
 			programmer.CodeDevice(code);
-			programmer.Close();
 
-			Console.WriteLine("Bye!");
+			programmer.Close();
 		}
 	}
 }
