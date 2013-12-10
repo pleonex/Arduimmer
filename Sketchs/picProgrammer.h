@@ -36,7 +36,7 @@
 #define WRITE_BUFFER 32
 
 // ONLY FOR: PIC18Fx5x0
-#define BOOT_BLOCK 0x07FF
+#define BOOT_BLOCK 0x800
 
 #define InstCore                 0x0
 #define InstShiftOut             0x2

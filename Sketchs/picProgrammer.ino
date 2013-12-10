@@ -92,7 +92,7 @@ byte receiveByte() {
 }
 
 byte sendInstruction(byte instr, unsigned int payload) {
-  if (bitRead(instr, 3) == 1 || instr == InstShiftOut) {
+  if (instr >= 2 && instr <= 0xB) {
     sendBits(instr, 4);
     return receiveByte();
   } else {
@@ -101,7 +101,7 @@ byte sendInstruction(byte instr, unsigned int payload) {
   }
 }
 
-void setTblPtr(long addr) {
+void setTblPtr(unsigned long addr) {
   sendInstruction(InstCore, 0x0E00 | ((addr >> 16) & 0xFF)); // MOVLW 0x3F
   sendInstruction(InstCore, 0x6EF8);        // MOVWF TBLPTRU
   sendInstruction(InstCore, 0x0E00 | ((addr >>  8) & 0xFF)); // MOVLW 0xFF
@@ -140,7 +140,7 @@ byte readMemory() {
 /*---------------------------------------------------------------*/
 /*                      Write functions                          */
 /*---------------------------------------------------------------*/
-void writeMemory(long addr, unsigned int data) {
+void writeMemory(unsigned long addr, unsigned int data) {
   setTblPtr(addr);
   sendInstruction(InstTblWrite, data);
 }
@@ -149,7 +149,7 @@ void writeMemory(unsigned int data) {
   sendInstruction(InstTblWrite, data); 
 }
 
-void writeIncrMemory(long addr, unsigned int data) {
+void writeIncrMemory(unsigned long addr, unsigned int data) {
   setTblPtr(addr);
   sendInstruction(InstTblWritePostIncr, data);
 }
@@ -158,7 +158,7 @@ void writeIncrMemory(unsigned int data) {
   sendInstruction(InstTblWritePostIncr, data); 
 }
 
-void writeIncrProgMemory(long addr, unsigned int data) {
+void writeIncrProgMemory(unsigned long addr, unsigned int data) {
   setTblPtr(addr);
   sendInstruction(InstTblWritePostIncrProg, data);
 }
@@ -167,7 +167,7 @@ void writeIncrProgMemory(unsigned int data) {
   sendInstruction(InstTblWritePostIncrProg, data); 
 }
 
-void writeProgMemory(long addr, unsigned int data) {
+void writeProgMemory(unsigned long addr, unsigned int data) {
   setTblPtr(addr);
   sendInstruction(InstTblWriteProg, data);
 }
@@ -176,10 +176,13 @@ void writeProgMemory(unsigned int data) {
   sendInstruction(InstTblWriteProg, data); 
 }
 
-void progCodeMemory(long addr, byte buf[], int bufLen) {
+void progCodeMemory(unsigned long addr, byte buf[], int bufLen) {
   // Configure Device for Writes
   sendInstruction(InstCore, 0x8EA6);  // BSF  EECON1, EEPGD
-  sendInstruction(InstCore, 0x9CA6);  // BCF  EECON1, CFGS
+  if (bufLen > 1)
+    sendInstruction(InstCore, 0x9CA6);  // BCF  EECON1, CFGS
+  else
+    sendInstruction(InstCore, 0x8CA6);  // BSF  EECON1, CFGS
   
   // Set address
   setTblPtr(addr);
@@ -187,15 +190,23 @@ void progCodeMemory(long addr, byte buf[], int bufLen) {
   // Load data into buffer
   int i;
   for (i = 0; i < (bufLen - 2); i += 2) {
-    unsigned int data = (buf[i] << 8) | buf[i+1];
+    unsigned int data = (buf[i+1] << 8) | buf[i];
     writeIncrMemory(data);
   }
   
   // Write last two bytes and start programming
-  unsigned int data = (buf[i] << 8) | buf[i+1];
+  unsigned int data = 0;
+  if (bufLen > 1)
+    data = (buf[i+1] << 8) | buf[i];
+  else if (addr % 2 == 0)
+    data = buf[i];
+  else
+    data = buf[i] << 8;
+  
   writeProgMemory(data);
   
-  sendBits(0, 4);
+  sendBits(0, 3);
+  digitalWrite(pinPGD, LOW);
   digitalWrite(pinPGC, HIGH);
   delayMicroseconds(TIME_P9);
   digitalWrite(pinPGC, LOW);
@@ -207,9 +218,11 @@ void progCodeMemory(long addr, byte buf[], int bufLen) {
 /*                      Erase functions                          */
 /*---------------------------------------------------------------*/
 void perfomBulkErase(unsigned int mode) {
+  enterLowVoltageIcsp();
+  
   // 1º Write mode into register
-  writeMemory(0x3C0005, (lowByte(mode) << 8) | lowByte(mode));
-  writeMemory(0x3C0006, (highByte(mode) << 8) | highByte(mode));
+  writeMemory(0x3C0005, (highByte(mode) << 8) | highByte(mode));
+  writeMemory(0x3C0004, (lowByte(mode) << 8) | lowByte(mode));
 
   // 2º Start erasing
     // 2.1 Send NOP
@@ -224,5 +237,6 @@ void perfomBulkErase(unsigned int mode) {
     // 2.4 Send null payload
   sendBits(0, 16);
   
+  exitLowVoltageIcsp();
   Serial.println("Erase done");
 }

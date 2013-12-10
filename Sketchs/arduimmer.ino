@@ -30,6 +30,9 @@ void setup() {
 }
 
 void loop() {
+  digitalWrite(pinPGM, LOW);
+  digitalWrite(pinVPP, HIGH);
+  
   serialCommands();
 }
 
@@ -50,6 +53,8 @@ void serialCommands() {
      perfomBulkErase(ERASE_CHIP);
    else if (strcmp(command, "Cod!") == 0)
      writeCode(WRITE_BUFFER, BOOT_BLOCK);
+   else if (strcmp(command, "Cnf!") == 0)
+     writeCode(1, 0);
  
  // Clear buffer
  while (Serial.available() > 0)
@@ -107,7 +112,7 @@ void writeCode(int bufferLength, int offset) {
       byte bytesRead;
       
       tmpAddr = serialReceiveAddress(); 
-      if (address == 0)
+      if (address == 0 && tmpAddr != 0xFFFFFFFFuL)
         address = tmpAddr + offset;
         
       if (tmpAddr != 0xFFFFFFFFuL) {
@@ -136,18 +141,32 @@ void writeCode(int bufferLength, int offset) {
       int bytesToWrite = (bufferLength < bufferIdx) ? bufferLength : bufferIdx;
       
       // DEBUG
-      Serial.print("Address: 0x");        Serial.println(address, HEX);
+      /*Serial.print("Address: 0x");        Serial.println(address, HEX);
       Serial.print("Buffer length: 0x");  Serial.println(bufferIdx, HEX);
       for (int i = 0; i < bytesToWrite; i++) {
         if (buffer[i] < 0x10)
           Serial.print('0');
         Serial.print(buffer[i], HEX);
       }
-      Serial.println("");
+      Serial.println("");*/
       // END DEBUG
      
       // 3º Write code into memory
-      // UNDONE
+      enterLowVoltageIcsp();
+      progCodeMemory(address, buffer, bytesToWrite);
+      for (int i = 0; i < bytesToWrite; i++) {
+        byte b = 0;
+        if (i == 0)
+          b = readIncrMemory(address);
+        else
+          b = readIncrMemory();
+          
+        if (b != buffer[i]) {
+          Serial.print("Error at: "); Serial.println(address + i, HEX);
+          Serial.print(buffer[i], HEX); Serial.print(" "); Serial.println(b, HEX);
+        }
+      }
+      exitLowVoltageIcsp();
       
       if (bufferIdx >= bufferLength) {
         // Copy not written data to the first positions
@@ -163,7 +182,7 @@ void writeCode(int bufferLength, int offset) {
     } while (bufferIdx >= bufferLength);
   } while (contProgramming);
   
-  Serial.println("Done!");
+  //Serial.println("Done!");
 }
 
 void showDeviceId() {

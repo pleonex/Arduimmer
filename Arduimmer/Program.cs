@@ -39,7 +39,7 @@ namespace Arduimmer
 			Console.WriteLine("Arduino found at port: {0}", programmer.PortName);
 			Console.WriteLine("PIC ID: {0:X}h", programmer.GetDeviceId());
 
-			programmer.WriteCode(code);
+			programmer.CodeDevice(code);
 			programmer.Close();
 
 			Console.WriteLine("Bye!");

@@ -72,22 +72,14 @@ namespace Arduimmer
 
 		public void CodeDevice(Hex code)
 		{
-			// 1º Enter Programming mode
-			this.EnterProgrammingMode();
-
-			// 2º Erase chip
+			// 1º Erase chip
 			this.EraseChip();
 
-			// 3º Send & verify code and data EEPROM
+			// 2º Send & verify code and data EEPR
 			this.WriteCode(code);
-			this.VerifyCode(code);
 
-			// 4º Send & verify configuration bits
+			// 3º Send & verify configuration bits
 			this.WriteConfBits(code);
-			this.VerifyConfBits(code);
-
-			// 5º Exit Programming mode
-			this.ExitProgrammingMode();
 		}
 
 		private void EnterProgrammingMode()
@@ -106,14 +98,14 @@ namespace Arduimmer
 			this.Write("End!");
 		}
 
-		private bool EraseChip()
+		private void EraseChip()
 		{
 			if (!this.Ping())
 				throw new IOException("Can not communicate with Arduino");
 
 			this.Write("Era!");
 			Thread.Sleep(1000);
-			return this.ReadLine() == "Erase done";
+			Console.WriteLine(this.ReadLine());
 		}
 
 		private void WriteCode(Hex code)
@@ -135,6 +127,11 @@ namespace Arduimmer
 					//  and start again
 					if (nextAddress != record.Address) {
 						this.Write((uint)0xFFFFFFFF);
+
+						Thread.Sleep(1000);
+						// Checks if Arduino wants to show its buffer
+						if (this.DataAvailable > 0)
+							Console.WriteLine(this.ReadAll());
 
 						// Waits for Aduino
 						bool ready = false;
@@ -166,19 +163,30 @@ namespace Arduimmer
 			}
 		}
 
-		private void VerifyCode(Hex code)
-		{
-			throw new NotImplementedException();
-		}
-
 		private void WriteConfBits(Hex code)
 		{
-			throw new NotImplementedException();
-		}
+			// Sends the command
+			this.Write("Cnf!");
 
-		private void VerifyConfBits(Hex code)
-		{
-			throw new NotImplementedException();
+			foreach (HexRecord record in code.Records) {
+				if (record.RecordType == RecordType.Eof) {
+					// If there is not more data
+					this.Write((uint)0xFFFFFFFF);
+				} else if ((record.Address & 0x00FF0000) == 0x00300000) {
+					// Writes configuration bits to the buffer
+					this.Write((uint)record.Address);
+					this.Write((byte)record.Data.Length);
+					this.Write(record.Data);
+				} else {
+					continue;
+				}
+
+				Thread.Sleep(100);	// Waits for Arduino
+
+				// Checks if Arduino wants to show its buffer
+				if (this.DataAvailable > 0)
+					Console.WriteLine(this.ReadAll());
+			}
 		}
 	}
 }
