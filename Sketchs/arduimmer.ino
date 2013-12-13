@@ -52,9 +52,9 @@ void serialCommands() {
    else if (strcmp(command, "Era!") == 0)
      perfomBulkErase(ERASE_CHIP);
    else if (strcmp(command, "Cod!") == 0)
-     writeCode(WRITE_BUFFER, 0);
+     writeCode();
    else if (strcmp(command, "Cnf!") == 0)
-     writeCode(1, 0);
+     writeCode();
  
  // Clear buffer
  while (Serial.available() > 0)
@@ -98,9 +98,10 @@ byte serialReceiveData(byte buffer[], int idx) {
   return bufferLength;
 }
 
-void writeCode(int bufferLength, int offset) {
+void writeCode() {
   byte buffer[64 * 16];
   int  bufferIdx = 0;
+  int  bufferLength = 0;
   unsigned long address = 0;
   unsigned long tmpAddr;
   boolean contReceiving;
@@ -116,7 +117,17 @@ void writeCode(int bufferLength, int offset) {
       // Reads address (stop command -> address 0xFFFFFFFF)
       tmpAddr = serialReceiveAddress(); 
       if (address == 0 && tmpAddr != 0xFFFFFFFFuL)
-        address = tmpAddr + offset;
+        address = tmpAddr;
+      
+      // Set the write buffer length
+      if (address < BOOT_BLOCK_LENGTH)
+        bufferLength = BOOT_BLOCK_BUFFER;
+      else if ((address & 0xFF0000) == 0x000000)
+        bufferLength = CODE_BLOCK_BUFFER;
+      else if ((address & 0xFF0000) == 0x3C0000)
+        bufferLength = CONF_BLOCK_BUFFER;
+      else if ((address & 0xFF0000) == 0x200000)
+        bufferLength = IDLO_BLOCK_BUFFER;
       
       // If no "stop command", reads data
       if (tmpAddr != 0xFFFFFFFFuL) {
