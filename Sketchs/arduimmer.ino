@@ -124,7 +124,7 @@ void writeCode() {
         bufferLength = BOOT_BLOCK_BUFFER;
       else if ((address & 0xFF0000) == 0x000000)
         bufferLength = CODE_BLOCK_BUFFER;
-      else if ((address & 0xFF0000) == 0x3C0000)
+      else if ((address & 0xFF0000) == 0x300000)
         bufferLength = CONF_BLOCK_BUFFER;
       else if ((address & 0xFF0000) == 0x200000)
         bufferLength = IDLO_BLOCK_BUFFER;
