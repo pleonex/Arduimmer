@@ -1,0 +1,573 @@
+Programming summary for PIC18F2XXX and PIC18F4XXX families ~~ by pleonex ~~
+Easier to understand. Easier to implement.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Supported devices                                                            #
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+• PIC18F2221 • PIC18F2580 • PIC18F4480
+• PIC18F2321 • PIC18F2585 • PIC18F4510
+• PIC18F2410 • PIC18F2610 • PIC18F4515
+• PIC18F2420 • PIC18F2620 • PIC18F4520
+• PIC18F2423 • PIC18F2680 • PIC18F4523
+• PIC18F2450 • PIC18F2682 • PIC18F4525
+• PIC18F2455 • PIC18F2685 • PIC18F4550
+• PIC18F2458 • PIC18F4221 • PIC18F4553
+• PIC18F2480 • PIC18F4321 • PIC18F4580
+• PIC18F2510 • PIC18F4410 • PIC18F4585
+• PIC18F2515 • PIC18F4420 • PIC18F4610
+• PIC18F2520 • PIC18F4423 • PIC18F4620
+• PIC18F2523 • PIC18F4450 • PIC18F4680
+• PIC18F2525 • PIC18F4455 • PIC18F4682
+• PIC18F2550 • PIC18F4458 • PIC18F4685
+• PIC18F2553
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Hardware notes                                                               #
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+|_@ High-Voltage ICSP
+Two programmable power supplies: VDD and VPP. Resolution: 0.25 V.
+VPP from VDD + 4.0 V to 12.5 V.
+
+|_@ Low-Voltage ICSP
+When LVP config bit is '1', this mode is enabled.
+One programmable power supply: VDD. VPP -> Normal operating voltage.
+VPP from 2.0 V to 5.5 V.
+
+|_@ General
+VPP       -> Programming enable
+IPP       -> Current on VPP (Max: 300 uA)
+VDD       -> Power supply (2.0 - 5.5 V)
+IDDP      -> Supply current on programming (Max: 10 mA)
+VSS       -> Ground
+PGM (RB5) -> Low-Voltage ICSP input (I)
+PGC (RB6) -> Serial clock (I)
+PGD (RB7) -> Serial data (I/O)
+VIL       -> Input low voltage (VSS - 0.2*VSS)
+VIH       -> Input high voltage (0.8*VDD - VDD) 
+VOL       -> Output low voltage (Max: 0.6 V)
+VOH       -> Output high voltage (Min: VDD - 0.7)
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Memory mapping                                                               #
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* Each Code Block have "code protection boundaries".
+* Boot Block reduces size of Block0
+* Unimplemented -> reads all 0's
+
+---> 000000h - 01FFFFh: Code Memory
+---> 01FFFFh - 200000h: Unimplemented
+---> 200000h - 3FFFFFh: Configuration & ID space
+
+|_@ Code Memory
+┌────────────┬───────────────────┬────────────┬───────────────────┬────────────┐
+│ PIC Family │    Code Memory    │  Nº Blocks │    Boot Block     │ BB config? │
+├────────────┼───────────────────┼────────────┼───────────────────┼────────────┤
+│ PIC18FX6X0 │ 000000h - 00FFFFh │ 4 (16 kiB) │ 000000h - 0007FFh │   Yes[1]   │
+├────────────┼───────────────────┼────────────┼───────────────────┼────────────┤
+│ PIC18FX5X5 │ 000000h - 00BFFFh │ 3 (16 kiB) │ 000000h - 0007FFh │   Yes[1]   │
+├────────────┼───────────────────┼────────────┼───────────────────┼────────────┤
+│ PIC18F2685 │ 000000h - 017FFFh │ 5 (16 kiB) │ 000000h - 000FFFh │   Yes[2]   │
+├────────────┼───────────────────┼────────────┼───────────────────┼────────────┤
+│ PIC18F4685 │ 000000h - 017FFFh │ 5 (16 kiB) │ 000000h - 000FFFh │   Yes[2]   │
+├────────────┼───────────────────┼────────────┼───────────────────┼────────────┤
+│ PIC18F2682 │ 000000h - 013FFFh │ 4 (16 kiB) │ 000000h - 000FFFh │   Yes[2]   │
+├────────────┼───────────────────┼────────────┼───────────────────┼────────────┤
+│ PIC18F4682 │ 000000h - 013FFFh │ 4 (16 kiB) │ 000000h - 000FFFh │   Yes[2]   │
+├────────────┼───────────────────┼────────────┼───────────────────┼────────────┤
+│ PIC18FX5X0 │ 000000h - 007FFFh │ 4 (16 kiB) │ 000000h - 0007FFh │     No     │
+├────────────┼───────────────────┼────────────┼───────────────────┼────────────┤
+│ PIC18FX5X3 │ 000000h - 007FFFh │ 4 (16 kiB) │ 000000h - 0007FFh │     No     │
+├────────────┼───────────────────┼────────────┼───────────────────┼────────────┤
+│ PIC18FX4X5 │ 000000h - 005FFFh │ 3 (16 kiB) │ 000000h - 0007FFh │     No     │
+├────────────┼───────────────────┼────────────┼───────────────────┼────────────┤
+│ PIC18FX4X8 │ 000000h - 005FFFh │ 3 (16 kiB) │ 000000h - 0007FFh │     No     │
+├────────────┼───────────────────┼────────────┼───────────────────┼────────────┤
+│ PIC18FX4X0 │ 000000h - 003FFFh │ 2 (08 kiB) │ 000000h - 0003FFh │     No     │
+├────────────┼───────────────────┼────────────┼───────────────────┼────────────┤
+│ PIC18FX4X3 │ 000000h - 003FFFh │ 2 (08 kiB) │ 000000h - 0003FFh │     No     │
+├────────────┼───────────────────┼────────────┼───────────────────┼────────────┤
+│ PIC18F2480 │ 000000h - 003FFFh │ 1 (16 kiB) │ 000000h - 0007FFh │   Yes[3]   │
+├────────────┼───────────────────┼────────────┼───────────────────┼────────────┤
+│ PIC18F4480 │ 000000h - 003FFFh │ 1 (16 kiB) │ 000000h - 0007FFh │   Yes[3]   │
+├────────────┼───────────────────┼────────────┼───────────────────┼────────────┤
+│ PIC18F2580 │ 000000h - 007FFFh │ 2 (16 kiB) │ 000000h - 0007FFh │   Yes[3]   │
+├────────────┼───────────────────┼────────────┼───────────────────┼────────────┤
+│ PIC18F4580 │ 000000h - 007FFFh │ 2 (16 kiB) │ 000000h - 0007FFh │   Yes[3]   │
+├────────────┼───────────────────┼────────────┼───────────────────┼────────────┤
+│ PIC18F2221 │ 000000h - 000FFFh │ 1 (04 kiB) │ 000000h - 0007FFh │   Yes[4]   │
+├────────────┼───────────────────┼────────────┼───────────────────┼────────────┤
+│ PIC18F4221 │ 000000h - 000FFFh │ 1 (04 kiB) │ 000000h - 0007FFh │   Yes[4]   │
+├────────────┼───────────────────┼────────────┼───────────────────┼────────────┤
+│ PIC18F2321 │ 000000h - 001FFFh │ 2 (04 kiB) │ 000000h - 0007FFh │   Yes[4]   │
+├────────────┼───────────────────┼────────────┼───────────────────┼────────────┤
+│ PIC18F4321 │ 000000h - 001FFFh │ 2 (04 kiB) │ 000000h - 0007FFh │   Yes[4]   │
+└────────────┴───────────────────┴────────────┴───────────────────┴────────────┘
+* Boot Block can be configured via BBSIZ<1:0> bits of CONFIG4L register.
+[1]: In PIC18F2585/2680/4585/4680, BB can be configured as 1, 2 or 4K words.
+[2]: Boot Block can be configured as 1, 2 or 4K words.
+[3]: Boot Block can be configured as 1 or 2K words via BBSIZ<0> bit.
+[4]: Boot Block can be configured as 256, 512 or 1024 words.
+
+|_@ Configuration & ID space
+* Accessible through "Table Reads" and "Table Writes".
+---> 300000h: CONFIG1L                        ---> 200000h: ID Location 1
+---> 300001h: CONFIG1H                        ---> 200001h: ID Location 2
+---> 300002h: CONFIG2L                        ---> 200002h: ID Location 3
+---> 300003h: CONFIG2H                        ---> 200003h: ID Location 4
+---> 300004h: CONFIG3L                        ---> 200004h: ID Location 5
+---> 300005h: CONFIG3H                        ---> 200005h: ID Location 6
+---> 300006h: CONFIG4L                        ---> 200006h: ID Location 7
+---> 300007h: CONFIG4H                        ---> 200007h: ID Location 8
+---> 300008h: CONFIG5L                        
+---> 300009h: CONFIG5H                        ---> 3C0004h: Bulk Erase Mode H
+---> 30000Ah: CONFIG6L                        ---> 3C0005h: Bulk Erase Mode L
+---> 30000Bh: CONFIG6H                        
+---> 30000Ch: CONFIG7L                        ---> 3FFFFEh: Device ID1
+---> 30000Dh: CONFIG7H                        ---> 3FFFFFh: Device ID2
+
+|_@ Memory Address Pointer
+Memory from 000000h to 3FFFFFh is addressed via "Table Pointer" register:
+Addr[21:16] -> 000FF8h (TBLPTRU)
+Addr[15:08] -> 000FF7h (TBLPTRH)
+Addr[07:00] -> 000FF6h (TBLPTRL)
+"Table Pointer" address loaded with 4-bit command '0000'. Many read & write ops.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Programming Overview                                                         #
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+╔═════╗    ┌─────────────────┐    ┌──────────────┐    ┌───────────┐
+║Start║ -> │Perfom Bulk Erase│ -> │Program Memory│ -> │Program IDs│
+╚═════╝    └─────────────────┘    └──────────────┘    └───────────┘
+                                                             │
+                                                             V
+┌───────────┐    ┌──────────┐    ┌──────────────┐    ┌───────────────┐
+│Verify Data│ <- │Verify IDs│ <- │Verify Program│ <- │Program Data EE│
+└───────────┘    └──────────┘    └──────────────┘    └───────────────┘
+      │
+      V
+┌──────────────────────────┐    ┌─────────────────────────┐    ╔════╗
+│Program Configuration Bits│ -> │Verify Configuration Bits│ -> ║Done║
+└──────────────────────────┘    └─────────────────────────┘    ╚════╝
+
+|_@ High-Voltage ICSP
+---> Entering:
+      # Hold PGC and PGD low
+      # Raise VDD high
+      # Wait at least 100 ns
+      # Raise VPP to VIHH (VDD + 4 to 12.5 V) (Max. raise time 1 us)
+      # Wait at least 2 us
+---> Exiting:
+      # Hold PGC and PGD low
+      # Set VPP low (no need to wait) (Max. raise time 1 us)
+      # No wait more than 100 ns
+      # Set VDD low
+
+|_@ Low-Voltage ICSP
+---> Entering:
+      # Hold PGC and PGD low
+      # Place logic high on PGM
+      # Wait at least 2 us
+      # Raise VPP to VIHL (2 to 5.5 V)
+      # Wait at least 2 us
+---> Exiting:
+      # Hold PGC and PGD low
+      # Set VPP low (no need to wait)
+      # Set PGM low (no need to wait)
+      
+|_@ Serial Program/Verify Operation
+* Commands and data transmitted in the rising edge, latched in the falling edge.
+* Clock pulses:
+  + Minimum period:    100 ns (VDD = 5 V) |   1 us (VDD = 2 V)
+  + Minimum low time:   40 ns (VDD = 5 V) | 400 ns (VDD = 2 V)
+  + Minimum high time:  40 ns (VDD = 5 V) | 400 ns (VDD = 2 V)
+  + Minimum delay between command and operands: 40 ns
+  + Minimum delay between operands and next command: 40 ns
+* Data pulses:
+  + Minimum setup time: 15 ns
+  + Minimum hold time:  15 ns
+* Transmission is LSb. Specification <MSb><LSb> for operands and <MSb> for cmds.
+* 20-bits per instruction = 4-bits cmd + 16-bits op (8-bits I & 8-bits I/O).
+┌────────────────────────────────────────────────────────────┬─────────────────┐
+│                        Description                         │ 4-bits Command  │
+├────────────────────────────────────────────────────────────┼─────────────────┤
+│ Core Instruction (Include 16-bits instruction to execute)  │     0 0 0 0     │
+├────────────────────────────────────────────────────────────┼─────────────────┤
+│ Shift Out TABLAT Register                                  │     0 0 1 0     │
+├────────────────────────────────────────────────────────────┼─────────────────┤
+│ Table Read                                                 │     1 0 0 0     │
+├────────────────────────────────────────────────────────────┼─────────────────┤
+│ Table Read, Post-Increment                                 │     1 0 0 1     │
+├────────────────────────────────────────────────────────────┼─────────────────┤
+│ Table Read, Post-Decrement                                 │     1 0 1 0     │
+├────────────────────────────────────────────────────────────┼─────────────────┤
+│ Table Read, Pre-Increment                                  │     1 0 1 1     │
+├────────────────────────────────────────────────────────────┼─────────────────┤
+│ Table Write                                                │     1 1 0 0     │
+├────────────────────────────────────────────────────────────┼─────────────────┤
+│ Table Write, Post-Increment by 2                           │     1 1 0 1     │
+├────────────────────────────────────────────────────────────┼─────────────────┤
+│ Table Write, Start Programming, Post-Increment by 2        │     1 1 1 0     │
+├────────────────────────────────────────────────────────────┼─────────────────┤
+│ Table Write, Start Programming                             │     1 1 1 1     │
+└────────────────────────────────────────────────────────────┴─────────────────┘
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Device Programming                                                           #
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* Erase & Write in the memory regions.
+* Start to write using either WREN+WR bits or "Start Programming" core command.
+* Except in "High-Voltage Bulk Erase" need to configure EECON1 register:
+  + EEPGD must be set     [EECON1<7>=1].
+  + CFGS  must be cleared [EECON1<6>=0].
+  + WREN  must be set     [EECON1<2>=1] before any write sequence using WR bit.
+  + FREE  must be set     [EECON1<4>=1] to enable erase program space pointed by
+                                        the Table Pointer.
+  + WR    must be set     [EECON1<1>=1] to start write sequence.
+
+|_@ General Bulk Erase
+* It can be used in High-Voltage ICSP and Low-Voltage ICSP only if supply 
+  voltage is greater or equal to 3 V.
+* Self-timed (no need of PGC).
+* Configure Bulk Erase Control register at 3C0004h-3C0005h.
+---> The Bulk Erase Sequence is described below:
+      # Write "Low part"  of "Erase Mode number" to 3C0005h.
+      # Write "High part" of "Erase Mode number" to 3C0004h.
+      # Delay P11 + P10.
+┌───────────────┬──────────────┬───────────────────────────────────────────────┐
+│ 4-Bit Command │ Data Payload │ Core Instruction Description                  │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    0 0 0 0    │    0E 3C     │ MOVLW 3Ch                                     │
+│    0 0 0 0    │    6E F8     │ MOVWF TBLPTRU                                 │
+│    0 0 0 0    │    0E 00     │ MOVLW 00h                                     │
+│    0 0 0 0    │    6E F7     │ MOVWF TBLPTRH                                 │
+│    0 0 0 0    │    0E 05     │ MOVLW 05h                                     │
+│    0 0 0 0    │    6E F6     │ MOVWF TBLPTRL                                 │
+│    1 1 0 0    │    XX XX     │ Write low part of Erase Mode number           │
+│    0 0 0 0    │    0E 3C     │ MOVLW 3Ch                                     │
+│    0 0 0 0    │    6E F8     │ MOVWF TBLPTRU                                 │
+│    0 0 0 0    │    0E 00     │ MOVLW 00h                                     │
+│    0 0 0 0    │    6E F7     │ MOVWF TBLPTRH                                 │
+│    0 0 0 0    │    0E 04     │ MOVLW 04h                                     │
+│    0 0 0 0    │    6E F6     │ MOVWF TBLPTRL                                 │
+│    1 1 0 0    │    YY YY     │ Write high part of Erase Mode number          │
+│    0 0 0 0    │    00 00     │ NOP. Start sequence.                          │
+│    0 0 0 0    │    00 00     │ Hold PGD low until erase completes.           │
+└───────────────┴──────────────┴───────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────┬──────────────────────────┐
+│                Erase Mode Description             │ Data (3C0005h - 3C0004h) │
+├───────────────────────────────────────────────────┼──────────────────────────┤
+│ Chip Erase                                        │          3F8Fh           │
+├───────────────────────────────────────────────────┼──────────────────────────┤
+│ Erase Data EEPROM                                 │          0084h           │
+├───────────────────────────────────────────────────┼──────────────────────────┤
+│ Erase Boot Block                                  │          0081h           │
+├───────────────────────────────────────────────────┼──────────────────────────┤
+│ Erase Configuration Bits                          │          0082h           │
+├───────────────────────────────────────────────────┼──────────────────────────┤
+│ Erase Code EEPROM Block 0                         │          0180h           │
+├───────────────────────────────────────────────────┼──────────────────────────┤
+│ Erase Code EEPROM Block 1                         │          0280h           │
+├───────────────────────────────────────────────────┼──────────────────────────┤
+│ Erase Code EEPROM Block 2                         │          0480h           │
+├───────────────────────────────────────────────────┼──────────────────────────┤
+│ Erase Code EEPROM Block 3                         │          0880h           │
+├───────────────────────────────────────────────────┼──────────────────────────┤
+│ Erase Code EEPROM Block 4                         │          1080h           │
+├───────────────────────────────────────────────────┼──────────────────────────┤
+│ Erase Code EEPROM Block 5                         │          2080h           │
+└───────────────────────────────────────────────────┴──────────────────────────┘
+
+|_@ ICSP Row Erase
+* Erase rows of 64 bytes of data.
+* Externally-timed (after NOP held high PGC for P9 time, held low P10 time).
+---> The "ICSP Row Erase" sequence is described below:
+        #1 Configure Device for Row Erases
+        #2 Start Erase Sequence & Hold PGC high for Time P9
+        #3 Hold PGC low for Time P10
+        #4 Check if all rows are erased
+           + No: Add 64 to address & Go to #2
+┌───────────────┬──────────────┬───────────────────────────────────────────────┐
+│ 4-Bit Command │ Data Payload │ Core Instruction Description                  │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    0 0 0 0    │    8E A6     │ BSF   EECON1, EEPGD                           │
+│    0 0 0 0    │    9C A6     │ BCF   EECON1, CFGS                            │
+│    0 0 0 0    │    84 A6     │ BSF   EECON1, WREN                            │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    0 0 0 0    │    0E XX     │ Write first two pair of bytes of address      │
+│    0 0 0 0    │    6E F8     │ MOVWF TBLPTRU                                 │
+│    0 0 0 0    │    0E YY     │ Write second pair of bytes of address         │
+│    0 0 0 0    │    6E F7     │ MOVWF TBLPTRH                                 │
+│    0 0 0 0    │    0E ZZ     │ Write third pair of bytes of address          │
+│    0 0 0 0    │    6E F6     │ MOVWF TBLPTRL                                 │
+├───────────────┴──────────────┴───────────────────────────────────────────────┤
+│ Repeat the last block incrementing the address by 64.                        │
+├───────────────┬──────────────┬───────────────────────────────────────────────┤
+│    0 0 0 0    │    88 A6     │ BSF   EECON1, FREE                            │
+│    0 0 0 0    │    82 A6     │ BSF   EECON1, WR                              │
+│    0 0 0 0    │    00 00     │ NOP. Hold PGC first high and then low         │
+└───────────────┴──────────────┴───────────────────────────────────────────────┘
+
+|_@ Code Memory Programming
+* This is valid only after Bulk Erase. Else check "Modifying Code Memory".
+* First load data into buffer, then initiaze programming sequence.
+┌────────────────────────────────────────────────┬──────────────┬──────────────┐
+│ Devices                                        │ Write Buffer │ Erase Buffer │
+├────────────────────────────────────────────────┼──────────────┼──────────────┤
+│ PIC18F2221, PIC18F2321, PIC18F4221, PIC18F4321 │   08 Bytes   │   64 Bytes   │
+├────────────────────────────────────────────────┼──────────────┼──────────────┤
+│ PIC18F2450, PIC18F4450                         │   16 Bytes   │   64 Bytes   │
+├────────────────────────────────────────────────┼──────────────┼──────────────┤
+│ PIC18F2410, PIC18F2510, PIC18F4410, PIC18F4510 │   32 Bytes   │   64 Bytes   │
+├────────────────────────────────────────────────┼──────────────┼──────────────┤
+│ PIC18F2420, PIC18F2520, PIC18F4420, PIC18F4520 │   32 Bytes   │   64 Bytes   │
+├────────────────────────────────────────────────┼──────────────┼──────────────┤
+│ PIC18F2423, PIC18F2523, PIC18F4423, PIC18F4523 │   32 Bytes   │   64 Bytes   │
+├────────────────────────────────────────────────┼──────────────┼──────────────┤
+│ PIC18F2480, PIC18F2580, PIC18F4480, PIC18F4580 │   32 Bytes   │   64 Bytes   │
+├────────────────────────────────────────────────┼──────────────┼──────────────┤
+│ PIC18F2455, PIC18F2550, PIC18F4455, PIC18F4550 │   32 Bytes   │   64 Bytes   │
+├────────────────────────────────────────────────┼──────────────┼──────────────┤
+│ PIC18F2458, PIC18F2553, PIC18F4458, PIC18F4553 │   32 Bytes   │   64 Bytes   │
+├────────────────────────────────────────────────┼──────────────┼──────────────┤
+│ PIC18F2515, PIC18F2610, PIC18F4515, PIC18F4510 │   64 Bytes   │   64 Bytes   │
+├────────────────────────────────────────────────┼──────────────┼──────────────┤
+│ PIC18F2525, PIC18F2620, PIC18F4525, PIC18F4620 │   64 Bytes   │   64 Bytes   │
+├────────────────────────────────────────────────┼──────────────┼──────────────┤
+│ PIC18F2585, PIC18F2680, PIC18F4585, PIC18F4680 │   64 Bytes   │   64 Bytes   │
+├────────────────────────────────────────────────┼──────────────┼──────────────┤
+│ PIC18F2682, PIC18F2685, PIC18F4682, PIC18F4685 │   64 Bytes   │   64 Bytes   │
+└────────────────────────────────────────────────┴──────────────┴──────────────┘
+---> The "Code Memory Programming" sequence is described below:
+        #1 Configure Device for Writes
+        #2 Load data into buffer
+        #3 Start write sequence & Hold PGC high for Time P9
+        #4 Hold PGC low for Time P10
+        #5 Check if all locations are done
+           + No: Go to #2
+┌───────────────┬──────────────┬───────────────────────────────────────────────┐
+│ 4-Bit Command │ Data Payload │ Core Instruction Description                  │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    0 0 0 0    │    8E A6     │ BSF   EECON1, EEPGD                           │
+│    0 0 0 0    │    9C A6     │ BCF   EECON1, CFGS                            │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    0 0 0 0    │    0E XX     │ MOVLW <Addr[21:16]>                           │
+│    0 0 0 0    │    6E F8     │ MOVWF TBLPTRU                                 │
+│    0 0 0 0    │    0E YY     │ MOVLW <Addr[15:08]>                           │
+│    0 0 0 0    │    6E F7     │ MOVWF TBLPTRH                                 │
+│    0 0 0 0    │    0E ZZ     │ MOVLW <Addr[07:00]>                           │
+│    0 0 0 0    │    6E F6     │ MOVWF TBLPTRL                                 │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    1 1 0 1    │    MM NN     │ Write 2 bytes and post-increment address by 2 │
+├───────────────┴──────────────┴───────────────────────────────────────────────┤
+│ Repeat the last block for all but the last two bytes.                        │
+├───────────────┬──────────────┬───────────────────────────────────────────────┤
+│    1 1 1 1    │    MM NN     │ Write 2 bytes and start programming           │
+│    0 0 0 0    │    00 00     │ NOP. Hold PGC high and then low               │
+├───────────────┴──────────────┴───────────────────────────────────────────────┤
+│ Repeat second block incrementing the address by buffer size.                 │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+|_@ Modifying Code Memory
+---> The "Modifying Code Memory" sequence is described below:
+        #1 Configure Device
+        #2 Read out code memory bytes into buffer
+        #3 Clear buffer
+        #4 Rewrite buffer with modified data
+        #5 Write buffer
+        #6 Check if all locations are done.
+           + No: Go to #2
+┌───────────────┬──────────────┬───────────────────────────────────────────────┐
+│ 4-Bit Command │ Data Payload │ Core Instruction Description                  │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    0 0 0 0    │    8E A6     │ BSF   EECON1, EEPGD                           │
+│    0 0 0 0    │    9C A6     │ BCF   EECON1, CFGS                            │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    0 0 0 0    │    0E XX     │ MOVLW <Addr[21:16]>                           │
+│    0 0 0 0    │    6E F8     │ MOVWF TBLPTRU                                 │
+│    0 0 0 0    │    0E YY     │ MOVLW <Addr[15:08]>                           │
+│    0 0 0 0    │    6E F7     │ MOVWF TBLPTRH                                 │
+│    0 0 0 0    │    0E ZZ     │ MOVLW <Addr[07:00]>                           │
+│    0 0 0 0    │    6E F6     │ MOVWF TBLPTRL                                 │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    0 0 0 0    │    84 A6     │ BSF   EECON1, WREN                            │
+│    0 0 0 0    │    88 A6     │ BSF   EECON1, FREE                            │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    0 0 0 0    │    82 A6     │ BSF   EECON1, WR                              │
+│    0 0 0 0    │    00 00     │ NOP. Hold PGC high for P9 and low for P10     │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    0 0 0 0    │    0E XX     │ MOVLW <Addr[21:16]>                           │
+│    0 0 0 0    │    6E F8     │ MOVWF TBLPTRU                                 │
+│    0 0 0 0    │    0E YY     │ MOVLW <Addr[15:08]>                           │
+│    0 0 0 0    │    6E F7     │ MOVWF TBLPTRH                                 │
+│    0 0 0 0    │    0E ZZ     │ MOVLW <Addr[07:00]>                           │
+│    0 0 0 0    │    6E F6     │ MOVWF TBLPTRL                                 │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    1 1 0 1    │    MM NN     │ Write 2 bytes and post-increment address by 2 │
+├───────────────┴──────────────┴───────────────────────────────────────────────┤
+│ Repeat the last block for all but the last two bytes in write buffer.        │
+├───────────────┬──────────────┬───────────────────────────────────────────────┤
+│    1 1 1 1    │    MM NN     │ Write 2 bytes and start programming           │
+│    0 0 0 0    │    00 00     │ NOP. Hold PGC high for P9 and low for P10     │
+├───────────────┴──────────────┴───────────────────────────────────────────────┤
+│ Repeat the last 3 blocks to write all the data in the clean area.            │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ Repeat from first block to continue erasing and writing.                     │
+├───────────────┬──────────────┬───────────────────────────────────────────────┤
+│    0 0 0 0    │    94 A6     │ BCF   EECON1, WREN                            │
+└───────────────┴──────────────┴───────────────────────────────────────────────┘
+
+|_@ Data EEPROM Programming
+* Not available in the following devices.
+  PIC18F2410      PIC18F4410
+  PIC18F2450      PIC18F4450
+  PIC18F2510      PIC18F4510
+  PIC18F2515      PIC18F4515
+  PIC18F2610      PIC18F4610
+* One byte at a time.
+* Address Pointer in EEADRH:EEADRL registers.
+* Data latch in EEDATA register.
+* EECON1 register configuration:
+  + EEPGD must be cleared.
+  + CFGS  must be cleared.
+  + WREN  must be set.
+  + WR    must be set to start the sequence (hardware clear when it's done).
+* Hold PGC low for time P10 after programming sequence finishes.
+---> The "Data EEPROM Programming" sequence is described below:
+        #1 Set Address
+        #2 Set Data
+        #3 Enable Write
+        #4 Start Write Sequence
+        #5 Wait until WR bit is cleared
+        #6 Check if all the bytes are written
+          + No: Go to #1
+┌───────────────┬──────────────┬───────────────────────────────────────────────┐
+│ 4-Bit Command │ Data Payload │ Core Instruction Description                  │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    0 0 0 0    │    9E A6     │ BCF   EECON1, EEPGD                           │
+│    0 0 0 0    │    9C A6     │ BCF   EECON1, CFGS                            │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    0 0 0 0    │    0E XX     │ MOVLW <Addr[07:00]>                           │
+│    0 0 0 0    │    6E A9     │ MOVWF EEADRL                                  │
+│    0 0 0 0    │    0E YY     │ MOVLW <Addr[15:08]>                           │
+│    0 0 0 0    │    6E AA     │ MOVWF EEADRH                                  │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    0 0 0 0    │    0E TT     │ MOVLW <Data>                                  │
+│    0 0 0 0    │    6E A8     │ MOVWF EEDATA                                  │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    0 0 0 0    │    84 A6     │ BSF   EECON1, WREN                            │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    0 0 0 0    │    82 A6     │ BSF   EECON1, WR                              │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    0 0 0 0    │    50 A6     │ MOVF  EECON1, W, 0                            │
+│    0 0 0 0    │    6E F5     │ MOVWF TABLAT                                  │
+│    0 0 0 0    │    00 00     │ NOP                                           │
+│    0 0 1 0    │    MM NN     │ Shift out data                                │
+├───────────────┴──────────────┴───────────────────────────────────────────────┤
+│ Check if the bit is clear. Else repeat this block. Hold PGC low for time P10.│
+├───────────────┬──────────────┬───────────────────────────────────────────────┤
+│    0 0 0 0    │    94 A6     │ BCF   EECON1, WREN                            │
+├───────────────┴──────────────┴───────────────────────────────────────────────┤
+│ Repeat from second block to write more data.                                 │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+|_@ ID Location Programming
+* Exactly the same as writing into the Code Memory but now into 020000h.
+* It only needs to fill 8 bytes of the write buffer.
+* It needs to erase the memory first. Else do as "Modifying Code Memory".
+
+|_@ Boot Block Programming
+* Exactly the same as writing into de Code Memory but in the right address.
+
+|_@ Configuration Bits Programming
+* Similar to Code Memory Programming.
+* Only one byte at a time: even addres -> LSB | odd address -> MSB.
+┌───────────────┬──────────────┬───────────────────────────────────────────────┐
+│ 4-Bit Command │ Data Payload │ Core Instruction Description                  │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    0 0 0 0    │    8E A6     │ BSF   EECON1, EEPGD                           │
+│    0 0 0 0    │    8C A6     │ BSF   EECON1, CFGS                            │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    0 0 0 0    │    0E 30     │ MOVLW 30h                                     │
+│    0 0 0 0    │    6E F8     │ MOVWF TBLPTRU                                 │
+│    0 0 0 0    │    0E 00     │ MOVLW 00h                                     │
+│    0 0 0 0    │    6E F7     │ MOVWF TBLPTRH                                 │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    0 0 0 0    │    0E 0X     │ MOVLW 0Xh (Even address)                      │
+│    0 0 0 0    │    6E F6     │ MOVWF TBLPTRL                                 │
+│    1 1 1 1    │    .. MM     │ Load 2 bytes and start programming            │
+│    0 0 0 0    │    00 00     │ NOP. Hold PGC high for P9 and low for P10     │
+│    0 0 0 0    │    0E 0Y     │ MOVLW 0Yh (Odd address)                       │
+│    0 0 0 0    │    6E F6     │ MOVWF TBLPTRL                                 │
+│    1 1 1 1    │    NN ..     │ Load 2 bytes and start programming            │
+│    0 0 0 0    │    00 00     │ NOP. Hold PGC high for P9 and low for P10     │
+├───────────────┴──────────────┴───────────────────────────────────────────────┤
+│ Repeat last block to write more data.                                        │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Device Reading                                                               #
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* By default, when no previous write or after erase, it reads 1's (FFh).
+
+|_@ Read Code Memory, ID Locations & Configuration Bits
+* One byte at a time using '1001' command.
+* Post-increment won't update TBLPTRU (00FFFFh + 1 != 010000h -> 000000h).
+* Address in Table Pointer, data to read from PGD.
+---> The "Device Reading" sequence is described below:
+        #1 Write address into Table Pointer
+        #2 Write '1001' command
+        #3 Wait 8 clock cycles holding PGD low
+        #4 Wait time P6 holding low PGC
+        #5 Read 8 bits from PGD in the following 8 clock cycles
+        #6 Check if all bytes are read (index is autoincremented):
+          + No: Go to #1 if need to write new address, else go to #2
+┌───────────────┬──────────────┬───────────────────────────────────────────────┐
+│ 4-Bit Command │ Data Payload │ Core Instruction Description                  │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    0 0 0 0    │    0E XX     │ MOVLW Addr[21:16]                             │
+│    0 0 0 0    │    6E F8     │ MOVWF TBLPTRU                                 │
+│    0 0 0 0    │    0E YY     │ MOVLW Addr[15:08]                             │
+│    0 0 0 0    │    6E F7     │ MOVWF TBLPTRH                                 │
+│    0 0 0 0    │    0E ZZ     │ MOVLW Addr[07:00]                             │
+│    0 0 0 0    │    6E F6     │ MOVWF TBLPTRL                                 │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    1 0 0 1    │    .. MM     │ Read a byte and increment address             │
+├───────────────┴──────────────┴───────────────────────────────────────────────┤
+│ Repeat last block to read from address+1 go to first block to set new address│
+└──────────────────────────────────────────────────────────────────────────────┘
+
+|_@ Read Data EEPROM
+* One byte at a time.
+* Address Pointer at (EEADRH:EEADRL).
+* Data latch at EEDATA, need to shift out the data from that register.
+---> The "Read Data EEPROM" is described below:
+        #1 Set address
+        #2 Read byte & Move it to TABLAT
+        #3 Shift out data (same sequence as '1001' command)
+        #4 Check if all bytes are read:
+          + No: Go to #1
+┌───────────────┬──────────────┬───────────────────────────────────────────────┐
+│ 4-Bit Command │ Data Payload │ Core Instruction Description                  │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    0 0 0 0    │    9E A6     │ BCF   EECON1, EEPGD                           │
+│    0 0 0 0    │    9C A6     │ BCF   EECON1, CFGS                            │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    0 0 0 0    │    0E XX     │ MOVLW <Addr[07:00]>                           │
+│    0 0 0 0    │    6E A9     │ MOVWF EEADRL                                  │
+│    0 0 0 0    │    0E YY     │ MOVLW <Addr[15:08]>                           │
+│    0 0 0 0    │    6E AA     │ MOVWF EEADRH                                  │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    0 0 0 0    │    80 A6     │ BSF   EECON1, RD                              │
+├───────────────┼──────────────┼───────────────────────────────────────────────┤
+│    0 0 0 0    │    50 A8     │ MOVF  EEDATA, W, 0                            │
+│    0 0 0 0    │    6E F5     │ MOVWF TABLAT                                  │
+│    0 0 0 0    │    00 00     │ NOP                                           │
+│    0 0 1 0    │    MM NN     │ Shift out data                                │
+├───────────────┴──────────────┴───────────────────────────────────────────────┤
+│ Repeat from second block to read more data.                                  │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# EOF                                                                          #
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
