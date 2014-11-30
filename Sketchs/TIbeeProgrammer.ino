@@ -1,19 +1,11 @@
-
-
-
 int RESET = 2;
 int CLOCK = 3; 
 int DATA = 4;
-byte data1;
-byte data2;
-
-
 
 void TIbeesetup() {
   pinMode(RESET, OUTPUT);
   pinMode(CLOCK, OUTPUT);
   pinMode(DATA, OUTPUT);
-
 }
 
 void enterDebugMode() {
@@ -40,7 +32,7 @@ void sendBit(byte data) {
 }
 
 void sendBits(unsigned int data, int n) {
-  for (int i = 0; i < n; i++)
+  for (int i = 7; i >= 0; i--)
     sendBit(bitRead(data, i));
 }
 
@@ -49,15 +41,19 @@ byte receiveByte() {
   
   pinMode(DATA, INPUT);
   while(digitalRead(DATA) == HIGH){
-    delay(1);
+    Serial.println("CHIP not ready...");
+    for (byte i = 0; i < 8; i++) {
+      digitalWrite(CLOCK, HIGH);
+      digitalWrite(CLOCK, LOW); 
+    }
+    delay(1000);
   }
   
   
   // Read byte from PGD
-  pinMode(DATA, INPUT);
   byte data = 0;
   
-  for (byte i = 0; i < 8; i++) {
+  for (byte i = 7; i >= 0; i--) {
     digitalWrite(CLOCK, HIGH);
     digitalWrite(CLOCK, LOW); 
     bitWrite(data, i, digitalRead(DATA));  
@@ -78,18 +74,22 @@ void setup() {
 
 // the loop routine runs over and over again forever:
 void loop() {
+  delay(10000);
+  Serial.print("hola");
+  
   enterDebugMode();
   
-  sendBits(0x01101000, 8);
+  sendBits(B01101000, 8);
   
   
-  data1 = receiveByte();
-  data2 = receiveByte();
+ byte  data1 = receiveByte();
+  byte data2 = receiveByte();
   
   
-  Serial.print(data1, OCT);  Serial.println(data2, OCT);
+  Serial.print(data1, HEX);  Serial.println(data2, HEX);
 
 
 
   delay(5000);
+  while (true) { }
 }
