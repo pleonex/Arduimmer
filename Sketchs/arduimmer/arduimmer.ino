@@ -17,13 +17,21 @@
     You should have received a copy of the GNU General Public License
     along with Arduimmer.  If not, see <http://www.gnu.org/licenses/>. 
 */
+#include "IcspProgrammer.h"
 #include "picProgrammer.h"
+
+#define pinPGM 5
+#define pinPGC 6
+#define pinPGD 7
+#define pinVPP 2
 
 const int CMD_LENGTH = 4;
 char command[CMD_LENGTH + 1];
 
+IcspProgrammer* programmer;
+
 void setup() { 
-  picProgrammerSetup();
+  programmer = new PicProgrammer(pinPGD, pinPGC, pinPGM, pinVPP);
   
   Serial.begin(9600);
   while (!Serial) ;   // Leonardo compability
@@ -44,13 +52,13 @@ void serialCommands() {
    if (strcmp(command, "Hey!") == 0)
      ping();
    else if (strcmp(command, "Dev?") == 0)
-     showDeviceId();
+     programmer->showDeviceId();
    else if (strcmp(command, "Goo!") == 0)
-     enterLowVoltageIcsp();
+     programmer->enterProgrammingMode();
    else if (strcmp(command, "End!") == 0)
-     exitLowVoltageIcsp();
+     programmer->exitProgrammingMode();
    else if (strcmp(command, "Era!") == 0)
-     perfomBulkErase(ERASE_CHIP);
+     programmer->erase();
    else if (strcmp(command, "Cod!") == 0)
      writeCode();
    else if (strcmp(command, "Cnf!") == 0)
@@ -153,20 +161,20 @@ void writeCode() {
       if (bufferIdx <= 0)
         break;
                 
-      enterLowVoltageIcsp();
+      programmer->enterProgrammingMode();
       
       // Writes data
       int bytesToWrite = (bufferLength < bufferIdx) ? bufferLength : bufferIdx;
-      progCodeMemory(address, buffer, bytesToWrite);
+      programmer->writeMemory(address, buffer, bytesToWrite);
       
       // Reads written data to verify it
       byte b;
       for (int i = 0; i < bytesToWrite; i++) {
         // If the first iteration, writes the address too
         if (i == 0)
-          b = readIncrMemory(address);
+          b = programmer->readMemory(address);
         else
-          b = readIncrMemory();
+          b = programmer->readMemoryIncr();
           
         // Checks if they are the same. If not, shows error and quit.
         if (b != buffer[i]) {
@@ -177,7 +185,7 @@ void writeCode() {
         }
       }
       
-      exitLowVoltageIcsp();
+      programmer->exitProgrammingMode();
       
       // Show how good is going everything :D
       Serial.print("\t* |");
@@ -204,16 +212,7 @@ void writeCode() {
   } while (contProgramming);
 }
 
-void showDeviceId() {
-  enterLowVoltageIcsp();
-  
-  short deviceId = readIncrMemory(0x3FFFFEL);
-  deviceId |= readIncrMemory() << 8;
-  
-  exitLowVoltageIcsp();
-  
-  Serial.println(deviceId, HEX);
-}
+
 
 byte char2int(char ch) {
   if (ch >= '0' && ch <= '9')

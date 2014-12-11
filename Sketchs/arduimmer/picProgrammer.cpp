@@ -17,81 +17,99 @@
     You should have received a copy of the GNU General Public License
     along with Arduimmer.  If not, see <http://www.gnu.org/licenses/>. 
 */
-void picProgrammerSetup() {
-  pinMode(pinPGM, OUTPUT);
-  pinMode(pinPGC, OUTPUT);
-  pinMode(pinPGD, OUTPUT);
-  pinMode(pinVPP, OUTPUT); 
+#include "Arduino.h"
+#include "picProgrammer.h"
+
+PicProgrammer::PicProgrammer(int dataPin, int clockPin, int masterPin, int vppPin)
+                 : IcspProgrammer(dataPin, clockPin)
+{
+  this->masterPin = masterPin;
+  this->vppPin = vppPin;
 }
 
-void enterLowVoltageIcsp() {
+void PicProgrammer::init()
+{
+  IcspProgrammer::init();
+  pinMode(masterPin, OUTPUT);
+  pinMode(vppPin, OUTPUT); 
+}
+
+boolean PicProgrammer::canRead()
+{
+  return true; 
+}
+
+boolean PicProgrammer::canWrite()
+{
+  return true; 
+}
+
+boolean PicProgrammer::canErase()
+{
+  return true; 
+}
+
+boolean PicProgrammer::canShowDeviceId()
+{
+  return true; 
+}
+
+void PicProgrammer::enterProgrammingMode()
+{
   // 1º Set PGC & PGD low
-  digitalWrite(pinPGC, LOW);
-  digitalWrite(pinPGD, LOW);
+  digitalWrite(clockPin, LOW);
+  digitalWrite(dataPin, LOW);
   
   // 2º Set PGM high
-  digitalWrite(pinPGM, HIGH);
+  digitalWrite(masterPin, HIGH);
   
   // 3º Wait at least 2 us
   delayMicroseconds(2);
   
   // 4º Set VPP high
-  digitalWrite(pinVPP, HIGH);
+  digitalWrite(vppPin, HIGH);
   
   // 5º Wait at least 2 us
   delayMicroseconds(2);
 }
 
-void exitLowVoltageIcsp() {
+void PicProgrammer::exitProgrammingMode() {
   // 1º Set PGC & PGD low
-  digitalWrite(pinPGC, LOW);
-  digitalWrite(pinPGD, LOW);
+  digitalWrite(clockPin, LOW);
+  digitalWrite(dataPin, LOW);
   
   // 2º Set VPP low
-  digitalWrite(pinVPP, LOW);
+  digitalWrite(vppPin, LOW);
   
   // 3º Set PGM low
-  digitalWrite(pinPGM, LOW);
+  digitalWrite(masterPin, LOW);
 }
 
-void sendBit(byte data) {
-  digitalWrite(pinPGC, HIGH);
-  digitalWrite(pinPGD, data);
-  
-  digitalWrite(pinPGC, LOW);
-  digitalWrite(pinPGD, LOW);
-}
-
-void sendBits(unsigned int data, int n) {
-  for (int i = 0; i < n; i++)
-    sendBit(bitRead(data, i));
-}
-
-byte receiveByte() {
+byte PicProgrammer::receiveByte() {
   
   // Set PGD low and wait 8 clock cycles
-  digitalWrite(pinPGD, LOW);
+  digitalWrite(dataPin, LOW);
   for (byte i = 0; i < 8; i++) {
-    digitalWrite(pinPGC, HIGH);
-    digitalWrite(pinPGC, LOW);
+    digitalWrite(clockPin, HIGH);
+    digitalWrite(clockPin, LOW);
   }
   
   // Read byte from PGD
-  pinMode(pinPGD, INPUT);
+  pinMode(dataPin, INPUT);
   byte data = 0;
   for (byte i = 0; i < 8; i++) {
-    digitalWrite(pinPGC, HIGH);
-    bitWrite(data, i, digitalRead(pinPGD));  
-    digitalWrite(pinPGC, LOW); 
+    digitalWrite(clockPin, HIGH);
+    bitWrite(data, i, digitalRead(dataPin));  
+    digitalWrite(clockPin, LOW); 
   }
   
   // Set again PGD as output
-  pinMode(pinPGD, OUTPUT);
+  pinMode(dataPin, OUTPUT);
   
   return data;
 }
 
-byte sendInstruction(byte instr, unsigned int payload) {
+byte PicProgrammer::sendInstruction(byte instr, unsigned int payload) {
   if (instr >= 2 && instr <= 0xB) {
     sendBits(instr, 4);
     return receiveByte();
@@ -101,7 +119,7 @@ byte sendInstruction(byte instr, unsigned int payload) {
   }
 }
 
-void setTblPtr(unsigned long addr) {
+void PicProgrammer::setTblPtr(unsigned long addr) {
   sendInstruction(InstCore, 0x0E00 | ((addr >> 16) & 0xFF)); // MOVLW 0x3F
   sendInstruction(InstCore, 0x6EF8);        // MOVWF TBLPTRU
   sendInstruction(InstCore, 0x0E00 | ((addr >>  8) & 0xFF)); // MOVLW 0xFF
@@ -113,7 +131,7 @@ void setTblPtr(unsigned long addr) {
 /*---------------------------------------------------------------*/
 /*                       Read functions                          */
 /*---------------------------------------------------------------*/
-byte readIncrMemory(long addr) {
+byte PicProgrammer::readMemory(unsigned long addr) {
   // 1º Set address into TBLPTR
   setTblPtr(addr);
   
@@ -121,62 +139,19 @@ byte readIncrMemory(long addr) {
   return sendInstruction(InstTblReadPostIncr, 0);
 }
 
-byte readIncrMemory() {
+byte PicProgrammer::readMemoryIncr() {
   return sendInstruction(InstTblReadPostIncr, 0); 
-}
-
-byte readMemory(long addr) {
-  // 1º Set address into TBLPTR
-  setTblPtr(addr);
-  
-  // 2º Read
-  return sendInstruction(InstTblRead, 0);
-}
-
-byte readMemory() {
- return sendInstruction(InstTblRead, 0); 
 }
 
 /*---------------------------------------------------------------*/
 /*                      Write functions                          */
 /*---------------------------------------------------------------*/
-void writeMemory(unsigned long addr, unsigned int data) {
+void PicProgrammer::writeMemory(unsigned long addr, unsigned int data) {
   setTblPtr(addr);
   sendInstruction(InstTblWrite, data);
 }
 
-void writeMemory(unsigned int data) {
-  sendInstruction(InstTblWrite, data); 
-}
-
-void writeIncrMemory(unsigned long addr, unsigned int data) {
-  setTblPtr(addr);
-  sendInstruction(InstTblWritePostIncr, data);
-}
-
-void writeIncrMemory(unsigned int data) {
-  sendInstruction(InstTblWritePostIncr, data); 
-}
-
-void writeIncrProgMemory(unsigned long addr, unsigned int data) {
-  setTblPtr(addr);
-  sendInstruction(InstTblWritePostIncrProg, data);
-}
-
-void writeIncrProgMemory(unsigned int data) {
-  sendInstruction(InstTblWritePostIncrProg, data); 
-}
-
-void writeProgMemory(unsigned long addr, unsigned int data) {
-  setTblPtr(addr);
-  sendInstruction(InstTblWriteProg, data);
-}
-
-void writeProgMemory(unsigned int data) {
-  sendInstruction(InstTblWriteProg, data); 
-}
-
-void progCodeMemory(unsigned long addr, byte buf[], int bufLen) {
+void PicProgrammer::writeMemory(unsigned long addr, byte buf[], int bufLen) {
   // Configure Device for Writes
   sendInstruction(InstCore, 0x8EA6);  // BSF  EECON1, EEPGD
   if (bufLen > 1)
@@ -191,7 +166,7 @@ void progCodeMemory(unsigned long addr, byte buf[], int bufLen) {
   int i;
   for (i = 0; i < (bufLen - 2); i += 2) {
     unsigned int data = (buf[i+1] << 8) | buf[i];
-    writeIncrMemory(data);
+    writeMemoryIncr(data);
   }
   
   // Write last two bytes and start programming
@@ -203,22 +178,32 @@ void progCodeMemory(unsigned long addr, byte buf[], int bufLen) {
   else
     data = buf[i] << 8;
   
-  writeProgMemory(data);
+  writeMemoryStartProgramming(data);
   
   sendBits(0, 3);
-  digitalWrite(pinPGD, LOW);
-  digitalWrite(pinPGC, HIGH);
+  digitalWrite(dataPin, LOW);
+  digitalWrite(clockPin, HIGH);
   delayMicroseconds(TIME_P9);
-  digitalWrite(pinPGC, LOW);
+  digitalWrite(clockPin, LOW);
   delayMicroseconds(TIME_P10);
   sendBits(0, 16);
+}
+
+void PicProgrammer::writeMemoryIncr(unsigned int data) {
+  sendInstruction(InstTblWritePostIncr, data);
+}
+
+void PicProgrammer::writeMemoryStartProgramming(unsigned int data) {
+  sendInstruction(InstTblWriteProg, data);
 }
 
 /*---------------------------------------------------------------*/
 /*                      Erase functions                          */
 /*---------------------------------------------------------------*/
-void perfomBulkErase(unsigned int mode) {
-  enterLowVoltageIcsp();
+void PicProgrammer::erase() {
+  const unsigned int mode = 0x3F8Fu; // CHIP ERASE
+  
+  enterProgrammingMode();
   
   // 1º Write mode into register
   writeMemory(0x3C0005, (highByte(mode) << 8) | highByte(mode));
@@ -230,13 +215,27 @@ void perfomBulkErase(unsigned int mode) {
     // 2.2 Send four '0' bits
   sendBits(0, 4);
     // 2.3 Wait P11 + P10 time
-  digitalWrite(pinPGD, LOW);
-  digitalWrite(pinPGC, LOW);
+  digitalWrite(dataPin, LOW);
+  digitalWrite(clockPin, LOW);
   delayMicroseconds(TIME_P11);
   delayMicroseconds(TIME_P10);
     // 2.4 Send null payload
   sendBits(0, 16);
   
-  exitLowVoltageIcsp();
+  exitProgrammingMode();
   Serial.println("Erase done");
+}
+
+/*---------------------------------------------------------------*/
+/*                   Show Chip Id functions                      */
+/*---------------------------------------------------------------*/
+void PicProgrammer::showDeviceId() {
+  enterProgrammingMode();
+  
+  short deviceId = readMemory(0x3FFFFEL);
+  deviceId |= readMemoryIncr() << 8;
+  
+  exitProgrammingMode();
+  
+  Serial.println(deviceId, HEX);
 }

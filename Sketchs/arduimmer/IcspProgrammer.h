@@ -36,14 +36,18 @@ class IcspProgrammer
     virtual void showDeviceId() = 0;
     virtual void erase() = 0;
     virtual void writeMemory(unsigned long addr, byte buf[], int bufLen) = 0;
-    virtual void readMemory(unsigned long addr) = 0;
+    virtual void writeMemory(unsigned long addr, unsigned int data) = 0;
+    virtual byte readMemory(unsigned long addr) = 0;
+    virtual byte readMemoryIncr() = 0;
     
   protected:
     virtual void init();
     
-  private:
-    int _dataPin;
-    int _clockPin;
+    void sendBit(byte data);
+    void sendBits(unsigned int data, int n);
+    
+    int dataPin;
+    int clockPin;
 };
 
 #endif

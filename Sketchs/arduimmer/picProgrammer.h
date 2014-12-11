@@ -1,26 +1,25 @@
 /*
-    Arduimmer. Using Arduino as a PIC18F2XXX and PIC18F4XXX programmer
-    Copyright (C) 2013 Benito Palacios (benito356@gmail.com)
-  
-    This file is part of Arduimmer.
+  PicProgrammer.h - Using Arduino as a PIC18F2XXX and PIC18F4XXX programmer.
 
-    Arduimmer is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+  This file is part of Arduimmer.
 
-    Arduimmer is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+  Arduimmer is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
 
-    You should have received a copy of the GNU General Public License
-    along with Arduimmer.  If not, see <http://www.gnu.org/licenses/>. 
+  Arduimmer is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with Arduimmer.  If not, see <http://www.gnu.org/licenses/>.
 */
-#define pinPGM 5
-#define pinPGC 6
-#define pinPGD 7
-#define pinVPP 2
+#ifndef PicProgrammer_h
+#define PicProgrammer_h
+#include "Arduino.h"
+#include "IcspProgrammer.h"
 
 #define TIME_P9   1000
 #define TIME_P10   100
@@ -43,13 +42,39 @@
 #define InstTblWritePostIncrProg 0xE
 #define InstTblWriteProg         0xF
 
-#define ERASE_CHIP           0x3F8Fu
-#define ERASE_DATA_EEPROM    0x0084u
-#define ERASE_BOOT_BLOCK     0x0081u
-#define ERASE_CONF_BITS      0x0082u
-#define ERASE_CODE_EEPROM_0  0x0180u
-#define ERASE_CODE_EEPROM_1  0x0280u
-#define ERASE_CODE_EEPROM_2  0x0480u
-#define ERASE_CODE_EEPROM_3  0x0880u
-#define ERASE_CODE_EEPROM_4  0x1080u
-#define ERASE_CODE_EEPROM_5  0x2080u
+class PicProgrammer : public IcspProgrammer
+{
+  public:
+    PicProgrammer(int dataPin, int clockPin, int masterPin, int vppPin);
+  
+    virtual boolean canRead();
+    virtual boolean canWrite();
+    virtual boolean canErase();
+    virtual boolean canShowDeviceId();
+    
+    virtual void enterProgrammingMode();
+    virtual void exitProgrammingMode();
+    
+    virtual void showDeviceId();
+    virtual void erase();
+    virtual void writeMemory(unsigned long addr, byte buf[], int bufLen);
+    virtual void writeMemory(unsigned long addr, unsigned int data);
+    virtual byte readMemory(unsigned long addr);
+    virtual byte readMemoryIncr();
+  
+  protected:
+    virtual void init();
+    
+  private:
+    int masterPin;
+    int vppPin;
+    
+    byte receiveByte();
+    byte sendInstruction(byte instr, unsigned int payload);
+    void setTblPtr(unsigned long addr);
+    
+    void writeMemoryIncr(unsigned int data);
+    void writeMemoryStartProgramming(unsigned int data);
+};
+
+#endif
