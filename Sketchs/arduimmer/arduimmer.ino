@@ -19,11 +19,18 @@
 */
 #include "IcspProgrammer.h"
 #include "picProgrammer.h"
+#include "TIbeeProgrammer.h"
 
+// PIC pins
 #define pinPGM 5
 #define pinPGC 6
 #define pinPGD 7
 #define pinVPP 2
+
+// CC2530 Pin 
+#define RESET 2 // Connect to RESET through TTL 3.3V converter
+#define CLOCK 3 // Connect to P2.2 (RSV) through TTL 3.3V converter
+#define DATA  4 // Connect to P2.1 (PWM) through TTL 3.3V converter
 
 const int CMD_LENGTH = 4;
 char command[CMD_LENGTH + 1];
@@ -31,16 +38,14 @@ char command[CMD_LENGTH + 1];
 IcspProgrammer* programmer;
 
 void setup() { 
-  programmer = new PicProgrammer(pinPGD, pinPGC, pinPGM, pinVPP);
+  //programmer = new PicProgrammer(pinPGD, pinPGC, pinPGM, pinVPP);
+  programmer = new TIbeeProgrammer(DATA, CLOCK, RESET);
   
   Serial.begin(9600);
   while (!Serial) ;   // Leonardo compability
 }
 
 void loop() {
-  digitalWrite(pinPGM, LOW);
-  digitalWrite(pinVPP, HIGH);
-  
   serialCommands();
 }
 

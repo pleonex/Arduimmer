@@ -21,10 +21,11 @@
 #include "picProgrammer.h"
 
 PicProgrammer::PicProgrammer(int dataPin, int clockPin, int masterPin, int vppPin)
-                 : IcspProgrammer(dataPin, clockPin)
+                 : IcspProgrammer(dataPin, clockPin, false)
 {
   this->masterPin = masterPin;
   this->vppPin = vppPin;
+  init();
 }
 
 void PicProgrammer::init()

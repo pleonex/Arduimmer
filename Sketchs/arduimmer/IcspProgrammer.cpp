@@ -19,12 +19,11 @@
 #include "Arduino.h"
 #include "IcspProgrammer.h"
 
-IcspProgrammer::IcspProgrammer(int dataPin, int clockPin)
+IcspProgrammer::IcspProgrammer(int dataPin, int clockPin, boolean isMsb)
 {
   this->dataPin = dataPin;
   this->clockPin = clockPin;
-  
-  init();
+  this->isMsb = isMsb;
 }
 
 void IcspProgrammer::init()
@@ -33,7 +32,12 @@ void IcspProgrammer::init()
   pinMode(clockPin, OUTPUT);
 }
 
+/**
+ * Send a bit to the processor.
+ */
 void IcspProgrammer::sendBit(byte data) {
+  // The bit is transmitted in
+  // while the clockPin is high.
   digitalWrite(clockPin, HIGH);
   digitalWrite(dataPin, data);
   
@@ -41,7 +45,15 @@ void IcspProgrammer::sendBit(byte data) {
   digitalWrite(dataPin, LOW);
 }
 
+/**
+ * Send a bit stream to the processor.
+ */
 void IcspProgrammer::sendBits(unsigned int data, int n) {
-  for (int i = 0; i < n; i++)
-    sendBit(bitRead(data, i));
+  if (isMsb) {
+    for (int i = n - 1; i >= 0; i--)
+      sendBit(bitRead(data, i));
+  } else {
+    for (int i = 0; i < n; i++)
+      sendBit(bitRead(data, i));
+  }
 }

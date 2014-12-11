@@ -23,7 +23,7 @@
 class IcspProgrammer
 {
   public:
-    IcspProgrammer(int dataPin, int clockPin);
+    IcspProgrammer(int dataPin, int clockPin, boolean isMsb);
     
     virtual boolean canRead() = 0;
     virtual boolean canWrite() = 0;
@@ -48,6 +48,7 @@ class IcspProgrammer
     
     int dataPin;
     int clockPin;
+    boolean isMsb;
 };
 
 #endif

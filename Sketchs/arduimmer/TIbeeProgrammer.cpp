@@ -1,80 +1,110 @@
-// Pin 
-int RESET = 2; // Connect to RESET through TTL 3.3V converter
-int CLOCK = 3; // Connect to P2.2 (RSV) through TTL 3.3V converter
-int DATA = 4;  // Connect to P2.1 (PWM) through TTL 3.3V converter
+/*
+    TIbeeProgrammer.cpp - Using Arduino as a CC2530 (8051 processor) programmer.
+  
+    This file is part of Arduimmer.
+
+    Arduimmer is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Arduimmer is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Arduimmer.  If not, see <http://www.gnu.org/licenses/>. 
+*/
+#include "Arduino.h"
+#include "TIbeeProgrammer.h"
+
+TIbeeProgrammer::TIbeeProgrammer(int dataPin, int clockPin, int resetPin)
+                 : IcspProgrammer(dataPin, clockPin, true)
+{
+  this->resetPin = resetPin;
+  init();
+}
 
 /**
  * Configure the pin to use.
  */
-void TIbeesetup() {
-  pinMode(RESET, OUTPUT);
-  pinMode(CLOCK, OUTPUT);
-  pinMode(DATA, OUTPUT);
+void TIbeeProgrammer::init()
+{
+  IcspProgrammer::init();
+  pinMode(resetPin, OUTPUT);
+}
+
+boolean TIbeeProgrammer::canRead()
+{
+  return false; 
+}
+
+boolean TIbeeProgrammer::canWrite()
+{
+  return false; 
+}
+
+boolean TIbeeProgrammer::canErase()
+{
+  return false; 
+}
+
+boolean TIbeeProgrammer::canShowDeviceId()
+{
+  return true; 
 }
 
 /**
  * Enter into Debug Mode.
  */
-void enterDebugMode() {
-  digitalWrite(RESET, LOW);
+void TIbeeProgrammer::enterProgrammingMode()
+{
+  digitalWrite(resetPin, LOW);
   
-  digitalWrite(CLOCK, HIGH);
-  digitalWrite(CLOCK, LOW);
-  digitalWrite(CLOCK, HIGH);
-  digitalWrite(CLOCK, LOW);
+  digitalWrite(clockPin, HIGH);
+  digitalWrite(clockPin, LOW);
+  digitalWrite(clockPin, HIGH);
+  digitalWrite(clockPin, LOW);
 
-  digitalWrite(RESET, HIGH);
-
+  digitalWrite(resetPin, HIGH);
 }
 
-/**
- * Send a bit to the processor.
- */
-void sendBit(byte data) {
-  // The bit is transmitted in
-  // while the clock is high.
-  digitalWrite(CLOCK, HIGH);
-  digitalWrite(DATA, data);
-  
-  digitalWrite(CLOCK, LOW);
-  digitalWrite(DATA, LOW);
-}
-
-/**
- * Send a bit stream to the processor.
- */
-void sendBits(unsigned int data, int n) {
-  for (int i = n - 1; i >= 0; i--)
-    sendBit(bitRead(data, i));
+void TIbeeProgrammer::exitProgrammingMode()
+{
+  // This is a guess... no official docs
+  digitalWrite(resetPin, LOW);
+  digitalWrite(resetPin, HIGH); 
 }
 
 /**
  * Receive a bit stream from the processor.
  */
-unsigned int receiveBits(int n) {
+unsigned int TIbeeProgrammer::receiveBits(int n)
+{
   // Wait for the chip to be ready
-  // indicated by setting DATA to high.
-  pinMode(DATA, INPUT);
-  while(digitalRead(DATA) == HIGH){
+  // indicated by setting dataPin to high.
+  pinMode(dataPin, INPUT);
+  while(digitalRead(dataPin) == HIGH){
     // If chip is still not ready...
-    // send 8 clock pulses.
+    // send 8 clockPin pulses.
     for (int i = 0; i < 8; i++) {
-      digitalWrite(CLOCK, HIGH);
-      digitalWrite(CLOCK, LOW); 
+      digitalWrite(clockPin, HIGH);
+      digitalWrite(clockPin, LOW); 
     }
   }
   
-  // Now, it's ready, start to receive data...
+  // Now, it's ready, start to receive dataPin...
   unsigned int data = 0;
   for (int i = n - 1; i >= 0; i--) {
-    // Send a clock pulse to get next bit.
-    digitalWrite(CLOCK, HIGH);
-    digitalWrite(CLOCK, LOW); 
-    bitWrite(data, i, digitalRead(DATA));  
+    // Send a clockPin pulse to get next bit.
+    digitalWrite(clockPin, HIGH);
+    digitalWrite(clockPin, LOW); 
+    bitWrite(data, i, digitalRead(dataPin));  
   }  
     
-  // Set again DATA as output (default)
-  pinMode(DATA, OUTPUT);
+  // Set again dataPin as output (default)
+  pinMode(dataPin, OUTPUT);
   
   return data;
 }
@@ -82,7 +112,10 @@ unsigned int receiveBits(int n) {
 /**
  * Show Chip ID and Version
  */
-void showChipInfo() {
+void TIbeeProgrammer::showDeviceId()
+{
+  enterProgrammingMode();
+  
   // Send "get chip command"
   sendBits(B01101000, 8);
   
@@ -92,25 +125,33 @@ void showChipInfo() {
   Serial.println(data >> 8, HEX);
   Serial.print("CHIP VERSION: 0x");
   Serial.println(data & 0xFF, HEX);
-}
-
-/**
- * Setup configuration
- */
-void setup() {   
-  // Setup pins  
-  TIbeesetup(); 
-
-  // Enter Debug Mode
-  enterDebugMode();
   
-  // Print Chip ID
-  delay(5000);
-  showChipInfo();
+  exitProgrammingMode();
 }
 
-/**
- * Main code
- */
-void loop() {
+void TIbeeProgrammer::erase()
+{
+  // TODO
+}
+
+void TIbeeProgrammer::writeMemory(unsigned long addr, byte buf[], int bufLen)
+{
+  // TODO
+}
+
+void TIbeeProgrammer::writeMemory(unsigned long addr, unsigned int data)
+{
+  // TODO
+}
+
+byte TIbeeProgrammer::readMemory(unsigned long addr)
+{
+  // TODO
+  return 0xFF;
+}
+
+byte TIbeeProgrammer::readMemoryIncr()
+{
+  // TODO
+  return 0xFF;
 }
