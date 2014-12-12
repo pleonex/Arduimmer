@@ -136,7 +136,22 @@ void TIbeeProgrammer::erase()
 
 void TIbeeProgrammer::writeMemory(unsigned long addr, byte buf[], int bufLen)
 {
-  // TODO
+    
+  //1º WR_CONFIG Command
+  sendBits(B00011000, 8);
+  sendBits(B00100010, 8);
+
+  //2º DMA Configurations
+  //SRCADDR Command
+  sendBits(B01010010 , 8);      //Send 2 bytes (Specified by last 2 bits)
+  sendBits(B01100010 , 8);
+  sendBits(B01100000 , 8);
+
+  //DESTADDR Command
+  sendBits(B01010010 , 8);      //Send 2 bytes (Specified by last 2 bits)
+  sendBits(B00000000 , 8);
+  sendBits(B00000000 , 8);
+  
 }
 
 void TIbeeProgrammer::writeMemory(unsigned long addr, unsigned int data)
