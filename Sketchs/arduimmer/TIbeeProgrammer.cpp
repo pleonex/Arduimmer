@@ -141,24 +141,64 @@ void TIbeeProgrammer::writeMemory(unsigned long addr, byte buf[], int bufLen)
   sendBits(B00011000, 8);
   sendBits(B00100010, 8);
 
-  //2º DMA Configurations
+
+
+
+  //2º DMA Configurations:  Channel 0.
   //SRCADDR Command
-  sendBits(B01010010 , 8);      //Send 2 bytes (Specified by last 2 bits)
-  sendBits(B01100010 , 8);
-  sendBits(B01100000 , 8);
+  sendBits(B01010010, 8);      //Send 2 bytes (Specified by last 2 bits)
+  sendBits(B01100010, 8);
+  sendBits(B01100000, 8);
 
   //DESTADDR Command
-  sendBits(B01010010 , 8);      //Send 2 bytes
-  sendBits(B00000000 , 8);
-  sendBits(B00000000 , 8);
+  sendBits(B01010010, 8);      //Send 2 bytes
+  sendBits(B00000000, 8);
+  sendBits(B00000000, 8);
 
   //VLEN and LEN Commands
-  sendBits(B01010010 , 8);      //Send 2 bytes
-
+  sendBits(B01010010, 8);      //Send 2 bytes
   sendBits(B000 << byte(bufLen), 8);  //!!!!!!! Not well made!!!
-  sendBits((byte(bufLen))(), 8);  //!!!!!!! Not well made!!!
+  sendBits((byte(bufLen)), 8);  //!!!!!!! Not well made!!!
+
+  //WORDSIZE, TMODE AND TRIG Commands
+  sendBits(B01010001, 8);      //Send 1 byte
+  sendBits(B0 << B00 << B11111, 8);
 
 
+  //SRCINC, DESTINC, IRQMASK, M8 AND PRIORITY Commands
+  sendBits(B01010001, 8);      //Send 1 byte
+  sendBits(B00 << B01 << B0 << B0 << B01, 8);
+
+  //End of the Channel 0 configuration DMA.
+
+
+
+
+  //2º DMA Configurations:  Channel 1.
+  //SRCADDR Command
+  sendBits(B01010010, 8);      //Send 2 bytes
+  sendBits(B00000000, 8);
+  sendBits(B00000000, 8);
+
+  //DESTADDR Command
+  sendBits(B01010010, 8);      //Send 2 bytes
+  sendBits(B01100010, 8);
+  sendBits(B01110011, 8);
+
+  //VLEN and LEN Commands
+  sendBits(B01010010, 8);      //Send 2 bytes
+  sendBits(B000 << byte(bufLen), 8);  //!!!!!!! Not well made!!!
+  sendBits((byte(bufLen)), 8);  //!!!!!!! Not well made!!!
+
+  //WORDSIZE, TMODE AND TRIG Commands
+  sendBits(B01010001, 8);      //Send 1 byte
+  sendBits(B0 << B10 << B10010, 8);
+
+
+  //SRCINC, DESTINC, IRQMASK, M8 AND PRIORITY Commands
+  sendBits(B01010001, 8);      //Send 1 byte
+  sendBits(B01 << B01 << B0 << B0 << B10, 8);
+  //End of the Channel 1 configuration DMA.
 
 
 
