@@ -155,7 +155,7 @@ void TIbeeProgrammer::sendInstruction3(byte inst1, byte inst2, byte inst3)
 void TIbeeProgrammer::sendInstruction(byte inst[], int n)
 {
   sendBits(B01010010, 8);
-  
+
   for(int i=0; i<n; i++){
     sendBits(inst[i], 8);
   }
@@ -231,7 +231,7 @@ void TIbeeProgrammer::writeMemory(unsigned long addr, byte buf[], int bufLen)
 
 
   //3º Point DMA Controller to DMA Configurations
-
+  //Prueba
 
 }
 
