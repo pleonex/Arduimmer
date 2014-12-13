@@ -48,6 +48,12 @@ class TIbeeProgrammer : public IcspProgrammer
     int resetPin;
     
     unsigned int receiveBits(int n);
+        
+    void sendInstruction(byte inst[], int n);
+    void sendInstruction1(byte inst);
+    void sendInstruction2(byte inst, byte inst2);
+    void sendInstruction3(byte inst, byte inst2, byte inst3);
+
 };
 
 #endif
