@@ -134,6 +134,35 @@ void TIbeeProgrammer::erase()
   // TODO
 }
 
+void TIbeeProgrammer::sendInstruction1(byte inst1)
+{
+  byte vector[] = { inst1 };
+  sendInstruction(vector, 1);
+}
+
+void TIbeeProgrammer::sendInstruction2(byte inst1, byte inst2)
+{
+  byte vector[] = { inst1, inst2 };
+  sendInstruction(vector, 2);
+}
+
+void TIbeeProgrammer::sendInstruction3(byte inst1, byte inst2, byte inst3)
+{
+  byte vector[] = { inst1, inst2, inst3 };
+  sendInstruction(vector, 3);
+}
+
+void TIbeeProgrammer::sendInstruction(byte inst[], int n)
+{
+  sendBits(B01010010, 8);
+  
+  for(int i=0; i<n; i++){
+    sendBits(inst[i], 8);
+  }
+}
+
+
+
 void TIbeeProgrammer::writeMemory(unsigned long addr, byte buf[], int bufLen)
 {
 
@@ -146,11 +175,10 @@ void TIbeeProgrammer::writeMemory(unsigned long addr, byte buf[], int bufLen)
 
   //2º DMA Configurations:  Channel 0.
   //SRCADDR Command
-  sendBits(B01010010, 8);      //Send 2 bytes (Specified by last 2 bits)
-  sendBits(B01100010, 8);
-  sendBits(B01100000, 8);
+  sendInstruction2(B01100010, B01100000);      //Send 2 bytes (Specified by last 2 bits)
 
   //DESTADDR Command
+  sendInstruction2(B00000000, B00000000);
   sendBits(B01010010, 8);      //Send 2 bytes
   sendBits(B00000000, 8);
   sendBits(B00000000, 8);
@@ -201,6 +229,8 @@ void TIbeeProgrammer::writeMemory(unsigned long addr, byte buf[], int bufLen)
   //End of the Channel 1 configuration DMA.
 
 
+
+  //3º Point DMA Controller to DMA Configurations
 
 
 }
