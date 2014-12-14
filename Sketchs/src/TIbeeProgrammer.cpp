@@ -1,34 +1,34 @@
 /*
-    TIbeeProgrammer.cpp - Using Arduino as a CC2530 (8051 processor) programmer.
+TIbeeProgrammer.cpp - Using Arduino as a CC2530 (8051 processor) programmer.
 
-    This file is part of Arduimmer.
+This file is part of Arduimmer.
 
-    Arduimmer is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+Arduimmer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-    Arduimmer is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+Arduimmer is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with Arduimmer.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License
+along with Arduimmer.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "Arduino.h"
 #include "TIbeeProgrammer.h"
 
 TIbeeProgrammer::TIbeeProgrammer(int dataPin, int clockPin, int resetPin)
-                 : IcspProgrammer(dataPin, clockPin, true)
+: IcspProgrammer(dataPin, clockPin, true)
 {
   this->resetPin = resetPin;
   init();
 }
 
 /**
- * Configure the pin to use.
- */
+* Configure the pin to use.
+*/
 void TIbeeProgrammer::init()
 {
   IcspProgrammer::init();
@@ -56,8 +56,8 @@ boolean TIbeeProgrammer::canShowDeviceId()
 }
 
 /**
- * Enter into Debug Mode.
- */
+* Enter into Debug Mode.
+*/
 void TIbeeProgrammer::enterProgrammingMode()
 {
   digitalWrite(resetPin, LOW);
@@ -78,8 +78,8 @@ void TIbeeProgrammer::exitProgrammingMode()
 }
 
 /**
- * Receive a bit stream from the processor.
- */
+* Receive a bit stream from the processor.
+*/
 unsigned int TIbeeProgrammer::receiveBits(int n)
 {
   // Wait for the chip to be ready
@@ -110,8 +110,8 @@ unsigned int TIbeeProgrammer::receiveBits(int n)
 }
 
 /**
- * Show Chip ID and Version
- */
+* Show Chip ID and Version
+*/
 void TIbeeProgrammer::showDeviceId()
 {
   enterProgrammingMode();
@@ -134,106 +134,132 @@ void TIbeeProgrammer::erase()
   // TODO
 }
 
-void TIbeeProgrammer::sendInstruction1(byte inst1)
-{
-  byte vector[] = { inst1 };
-  sendInstruction(vector, 1);
-}
 
-void TIbeeProgrammer::sendInstruction2(byte inst1, byte inst2)
-{
-  byte vector[] = { inst1, inst2 };
-  sendInstruction(vector, 2);
-}
 
-void TIbeeProgrammer::sendInstruction3(byte inst1, byte inst2, byte inst3)
+//send 1, 2 or 3 instruction
+unsigned int TIbeeProgrammer::sendInstruction(byte command, byte *inst, int n)
 {
-  byte vector[] = { inst1, inst2, inst3 };
-  sendInstruction(vector, 3);
-}
+  //Send command
+  sendBits(command, 8);
 
-void TIbeeProgrammer::sendInstruction(byte inst[], int n)
-{
-  sendBits(B01010010, 8);
-
-  for(int i=0; i<n; i++){
+  //Send bytes
+  for(int i = 0; i < n; i++){
     sendBits(inst[i], 8);
   }
+
+  unsigned int output = receiveBits(8);
+
+  return output;
 }
 
 
 
+//Write data in the flash memmory.
+void TIbeeProgrammer::writeMemory(unsigned long addr, byte buf[], int bufLen)
+{
+  unsigned char instr[3];
+
+  //MOV DPTR, Address
+  instr[0] = 0x90;
+  instr[1] = highByte(addr);
+  instr[2] = lowByte(addr);
+
+  sendInstruction(SEND_DEBUG_INSTR_3, instr, 3);
+
+  for(int i = 0; i < bufLen; i++){
+    //MOV A, values[i]
+    instr[0] = 0x74;
+    instr[1] = buf[i];
+    sendInstruction(SEND_DEBUG_INSTR_2, instr, 2);
+
+    //MOV A, values[i]
+    instr[0] = 0xF0;
+    sendInstruction(SEND_DEBUG_INSTR_1, instr, 1);
+
+    // INC DPTR
+    instr[0] = 0xA3;
+    sendInstruction(SEND_DEBUG_INSTR_1, instr, 1);
+
+  }
+
+}
+
+
+
+
+
+/*   IN CONSTRUCTION
 void TIbeeProgrammer::writeMemory(unsigned long addr, byte buf[], int bufLen)
 {
 
-  //1º WR_CONFIG Command
-  sendBits(B00011000, 8);
-  sendBits(B00100010, 8);
+//1º WR_CONFIG Command
+sendBits(B00011000, 8);
+sendBits(B00100010, 8);
 
 
 
 
-  //2º DMA Configurations:  Channel 0.
-  //SRCADDR Command
-  sendInstruction2(B01100010, B01100000);      //Send 2 bytes (Specified by last 2 bits)
+//2º DMA Configurations:  Channel 0.
+//SRCADDR Command
+sendInstruction2(B01100010, B01100000);      //Send 2 bytes (Specified by last 2 bits)
 
-  //DESTADDR Command
-  sendInstruction2(B00000000, B00000000);
-  sendBits(B01010010, 8);      //Send 2 bytes
-  sendBits(B00000000, 8);
-  sendBits(B00000000, 8);
+//DESTADDR Command
+sendInstruction2(B00000000, B00000000);
+sendBits(B01010010, 8);      //Send 2 bytes
+sendBits(B00000000, 8);
+sendBits(B00000000, 8);
 
-  //VLEN and LEN Commands
-  sendBits(B01010010, 8);      //Send 2 bytes
-  sendBits(B000 << byte(bufLen), 8);  //!!!!!!! Not well made!!!
-  sendBits((byte(bufLen)), 8);  //!!!!!!! Not well made!!!
+//VLEN and LEN Commands
+sendBits(B01010010, 8);      //Send 2 bytes
+sendBits(B000 << byte(bufLen), 8);  //!!!!!!! Not well made!!!
+sendBits((byte(bufLen)), 8);  //!!!!!!! Not well made!!!
 
-  //WORDSIZE, TMODE AND TRIG Commands
-  sendBits(B01010001, 8);      //Send 1 byte
-  sendBits(B0 << B00 << B11111, 8);
-
-
-  //SRCINC, DESTINC, IRQMASK, M8 AND PRIORITY Commands
-  sendBits(B01010001, 8);      //Send 1 byte
-  sendBits(B00 << B01 << B0 << B0 << B01, 8);
-
-  //End of the Channel 0 configuration DMA.
+//WORDSIZE, TMODE AND TRIG Commands
+sendBits(B01010001, 8);      //Send 1 byte
+sendBits(B0 << B00 << B11111, 8);
 
 
+//SRCINC, DESTINC, IRQMASK, M8 AND PRIORITY Commands
+sendBits(B01010001, 8);      //Send 1 byte
+sendBits(B00 << B01 << B0 << B0 << B01, 8);
 
-
-  //2º DMA Configurations:  Channel 1.
-  //SRCADDR Command
-  sendBits(B01010010, 8);      //Send 2 bytes
-  sendBits(B00000000, 8);
-  sendBits(B00000000, 8);
-
-  //DESTADDR Command
-  sendBits(B01010010, 8);      //Send 2 bytes
-  sendBits(B01100010, 8);
-  sendBits(B01110011, 8);
-
-  //VLEN and LEN Commands
-  sendBits(B01010010, 8);      //Send 2 bytes
-  sendBits(B000 << byte(bufLen), 8);  //!!!!!!! Not well made!!!
-  sendBits((byte(bufLen)), 8);  //!!!!!!! Not well made!!!
-
-  //WORDSIZE, TMODE AND TRIG Commands
-  sendBits(B01010001, 8);      //Send 1 byte
-  sendBits(B0 << B10 << B10010, 8);
-
-
-  //SRCINC, DESTINC, IRQMASK, M8 AND PRIORITY Commands
-  sendBits(B01010001, 8);      //Send 1 byte
-  sendBits(B01 << B01 << B0 << B0 << B10, 8);
-  //End of the Channel 1 configuration DMA.
+//End of the Channel 0 configuration DMA.
 
 
 
-  //3º Point DMA Controller to DMA Configurations
-  //Prueba
 
-}
+//2º DMA Configurations:  Channel 1.
+//SRCADDR Command
+sendBits(B01010010, 8);      //Send 2 bytes
+sendBits(B00000000, 8);
+sendBits(B00000000, 8);
+
+//DESTADDR Command
+sendBits(B01010010, 8);      //Send 2 bytes
+sendBits(B01100010, 8);
+sendBits(B01110011, 8);
+
+//VLEN and LEN Commands
+sendBits(B01010010, 8);      //Send 2 bytes
+sendBits(B000 << byte(bufLen), 8);  //!!!!!!! Not well made!!!
+sendBits((byte(bufLen)), 8);  //!!!!!!! Not well made!!!
+
+//WORDSIZE, TMODE AND TRIG Commands
+sendBits(B01010001, 8);      //Send 1 byte
+sendBits(B0 << B10 << B10010, 8);
+
+
+//SRCINC, DESTINC, IRQMASK, M8 AND PRIORITY Commands
+sendBits(B01010001, 8);      //Send 1 byte
+sendBits(B01 << B01 << B0 << B0 << B10, 8);
+//End of the Channel 1 configuration DMA.
+
+
+
+//3º Point DMA Controller to DMA Configurations
+//Prueba
+
+}*/
 
 void TIbeeProgrammer::writeMemory(unsigned long addr, unsigned int data)
 {

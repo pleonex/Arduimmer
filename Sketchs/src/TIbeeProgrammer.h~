@@ -25,39 +25,35 @@ class TIbeeProgrammer : public IcspProgrammer
 {
     public:
     TIbeeProgrammer(int dataPin, int clockPin, int resetPin);
-
+  
     virtual boolean canRead();
     virtual boolean canWrite();
     virtual boolean canErase();
     virtual boolean canShowDeviceId();
-
+    
     virtual void enterProgrammingMode();
     virtual void exitProgrammingMode();
-
+    
     virtual void showDeviceId();
     virtual void erase();
     virtual void writeMemory(unsigned long addr, byte buf[], int bufLen);
     virtual void writeMemory(unsigned long addr, unsigned int data);
     virtual byte readMemory(unsigned long addr);
     virtual byte readMemoryIncr();
-
+  
   protected:
     virtual void init();
-
+    
   private:
     int resetPin;
-
+    
     unsigned int receiveBits(int n);
-
-    unsigned int sendInstruction(byte command, byte *inst, int n);
+        
+    void sendInstruction(byte inst[], int n);
+    void sendInstruction1(byte inst);
+    void sendInstruction2(byte inst, byte inst2);
+    void sendInstruction3(byte inst, byte inst2, byte inst3);
 
 };
 
 #endif
-
-
-
-//Debug instructions for 1, 2 or 3 for sending commands
-#define SEND_DEBUG_INSTR_1  B01010001
-#define SEND_DEBUG_INSTR_2  B01010010
-#define SEND_DEBUG_INSTR_3  B01010011
