@@ -55,6 +55,8 @@ boolean TIbeeProgrammer::canShowDeviceId()
   return true;
 }
 
+
+
 /**
 * Enter into Debug Mode.
 */
@@ -70,12 +72,16 @@ void TIbeeProgrammer::enterProgrammingMode()
   digitalWrite(resetPin, HIGH);
 }
 
+
+
 void TIbeeProgrammer::exitProgrammingMode()
 {
   // This is a guess... no official docs
   digitalWrite(resetPin, LOW);
   digitalWrite(resetPin, HIGH);
 }
+
+
 
 /**
 * Receive a bit stream from the processor.
@@ -109,6 +115,8 @@ unsigned int TIbeeProgrammer::receiveBits(int n)
   return data;
 }
 
+
+
 /**
 * Show Chip ID and Version
 */
@@ -128,6 +136,8 @@ void TIbeeProgrammer::showDeviceId()
 
   exitProgrammingMode();
 }
+
+
 
 void TIbeeProgrammer::erase()
 {
@@ -186,91 +196,44 @@ void TIbeeProgrammer::writeMemory(unsigned long addr, byte buf[], int bufLen)
 
 
 
-
-
-/*   IN CONSTRUCTION
-void TIbeeProgrammer::writeMemory(unsigned long addr, byte buf[], int bufLen)
-{
-
-//1º WR_CONFIG Command
-sendBits(B00011000, 8);
-sendBits(B00100010, 8);
-
-
-
-
-//2º DMA Configurations:  Channel 0.
-//SRCADDR Command
-sendInstruction2(B01100010, B01100000);      //Send 2 bytes (Specified by last 2 bits)
-
-//DESTADDR Command
-sendInstruction2(B00000000, B00000000);
-sendBits(B01010010, 8);      //Send 2 bytes
-sendBits(B00000000, 8);
-sendBits(B00000000, 8);
-
-//VLEN and LEN Commands
-sendBits(B01010010, 8);      //Send 2 bytes
-sendBits(B000 << byte(bufLen), 8);  //!!!!!!! Not well made!!!
-sendBits((byte(bufLen)), 8);  //!!!!!!! Not well made!!!
-
-//WORDSIZE, TMODE AND TRIG Commands
-sendBits(B01010001, 8);      //Send 1 byte
-sendBits(B0 << B00 << B11111, 8);
-
-
-//SRCINC, DESTINC, IRQMASK, M8 AND PRIORITY Commands
-sendBits(B01010001, 8);      //Send 1 byte
-sendBits(B00 << B01 << B0 << B0 << B01, 8);
-
-//End of the Channel 0 configuration DMA.
-
-
-
-
-//2º DMA Configurations:  Channel 1.
-//SRCADDR Command
-sendBits(B01010010, 8);      //Send 2 bytes
-sendBits(B00000000, 8);
-sendBits(B00000000, 8);
-
-//DESTADDR Command
-sendBits(B01010010, 8);      //Send 2 bytes
-sendBits(B01100010, 8);
-sendBits(B01110011, 8);
-
-//VLEN and LEN Commands
-sendBits(B01010010, 8);      //Send 2 bytes
-sendBits(B000 << byte(bufLen), 8);  //!!!!!!! Not well made!!!
-sendBits((byte(bufLen)), 8);  //!!!!!!! Not well made!!!
-
-//WORDSIZE, TMODE AND TRIG Commands
-sendBits(B01010001, 8);      //Send 1 byte
-sendBits(B0 << B10 << B10010, 8);
-
-
-//SRCINC, DESTINC, IRQMASK, M8 AND PRIORITY Commands
-sendBits(B01010001, 8);      //Send 1 byte
-sendBits(B01 << B01 << B0 << B0 << B10, 8);
-//End of the Channel 1 configuration DMA.
-
-
-
-//3º Point DMA Controller to DMA Configurations
-//Prueba
-
-}*/
-
 void TIbeeProgrammer::writeMemory(unsigned long addr, unsigned int data)
 {
-  // TODO
+  unsigned char instr[3];
+
+  // MOV DPTR, address
+  instr[0] = 0x90;
+  instr[1] = highByte(addr);
+  instr[2] = lowByte(addr);
+  sendInstruction(SEND_DEBUG_INSTR_3, instr, 3);
+
+  // MOV A, values[i]
+  instr[0] = 0x74;
+  instr[1] = data;
+  sendInstruction(SEND_DEBUG_INSTR_2, instr, 2);
+
+  // MOV @DPTR, A
+  instr[0] = 0xF0;
+  sendInstruction(SEND_DEBUG_INSTR_1, instr, 1);
 }
+
+
 
 byte TIbeeProgrammer::readMemory(unsigned long addr)
 {
-  // TODO
-  return 0xFF;
+  unsigned char instr[3];
+
+  // MOV DPTR, address
+  instr[0] = 0x90;
+  instr[1] = highByte(addr);
+  instr[2] = lowByte(addr);
+  sendInstruction(SEND_DEBUG_INSTR_3, instr, 3);
+
+  // MOVX A, @DPTR
+  instr[0] = 0xE0;
+  return sendInstruction(SEND_DEBUG_INSTR_1, instr, 1);
 }
+
+
 
 byte TIbeeProgrammer::readMemoryIncr()
 {
