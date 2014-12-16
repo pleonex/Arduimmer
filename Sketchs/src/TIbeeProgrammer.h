@@ -38,6 +38,7 @@ class TIbeeProgrammer : public IcspProgrammer
     virtual void erase();
     virtual void writeMemory(unsigned long addr, byte buf[], int bufLen);
     virtual void writeMemory(unsigned long addr, unsigned int data);
+    virtual unsigned int readMemory(unsigned long addr, int bufLen){
     virtual byte readMemory(unsigned long addr);
     virtual byte readMemoryIncr();
 
@@ -53,10 +54,10 @@ class TIbeeProgrammer : public IcspProgrammer
 
 };
 
+
+
+
 #endif
-
-
-
 //Debug instructions for 1, 2 or 3 for sending commands
 #define SEND_DEBUG_INSTR_1  B01010001
 #define SEND_DEBUG_INSTR_2  B01010010

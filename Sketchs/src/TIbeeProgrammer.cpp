@@ -235,6 +235,19 @@ byte TIbeeProgrammer::readMemory(unsigned long addr)
 
 
 
+unsigned int  TIbeeProgrammer::readMemory(unsigned long addr, int bufLen)
+{
+  unsigned int data[bufLen];
+
+  for(unsigned long i = 0; i < bufLen; i++){
+    data[i] = readMemory(unsigned long (addr + i) );    //Inacabado, error "extra qualification"
+  }
+
+  return *data;
+}
+
+
+
 byte TIbeeProgrammer::readMemoryIncr()
 {
   // TODO
