@@ -141,7 +141,22 @@ void TIbeeProgrammer::showDeviceId()
 
 void TIbeeProgrammer::erase()
 {
-  // TODO
+  sendbits(B00010000,8);
+  a=receiveBits(8);
+  p=a»7;
+  if (p==0){
+      return false;
+  }
+  for(int i=1; i<=10; i++) {
+  sendbits(B00110000,8);
+  a=receiveBits(8);
+  p=a»7;
+    if (p==0){
+      return true;
+    }
+  }
+  return false;
+}
 }
 
 
