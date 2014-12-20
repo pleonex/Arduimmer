@@ -55,7 +55,9 @@ class PicProgrammer : public IcspProgrammer
     virtual void enterProgrammingMode();
     virtual void exitProgrammingMode();
 
-    virtual void showDeviceId();
+    virtual unsigned int getDeviceId();
+    virtual bool isSupported(unsigned int deviceId);
+
     virtual bool erase();
     virtual void writeMemory(unsigned long addr, byte buf[], int bufLen);
     virtual void writeMemory(unsigned long addr, unsigned int data);

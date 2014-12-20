@@ -31,7 +31,8 @@ const char PING[] = "Hey!";
 const char PONG[] = "Yes?";
 const char CODE[] = "Pro!";
 const char FINISHED[] = "Done!";
-const char ERROR_UNK_DEVICE[] = "E01";
+const char ERROR_UNKNOWN_DEVICE[] = "E01";
+const char ERROR_INVALID_DEVICE[] = "E02";
 
 /*---------------------------------------------------------------*/
 /*                            Main setup                         */
@@ -98,7 +99,7 @@ void program() {
   // Create the programmer
   IcspProgrammer* programmer = programmerFactory(deviceName, ports);
   if (programmer == NULL) {
-    Serial.println(ERROR_UNK_DEVICE);
+    Serial.println(ERROR_UNKNOWN_DEVICE);
     return;
   }
 
@@ -106,8 +107,11 @@ void program() {
   programmer->enterProgrammingMode();
 
   // Get device ID and verify it
-  programmer->showDeviceId();
-  // TODO: Verify it
+  unsigned int deviceId = programmer->getDeviceId();
+  if (!programmer->isSupported(deviceId)) {
+    Serial.println(ERROR_INVALID_DEVICE);
+    return;
+  }
 
   // Write and verify the program
   while (serialBuffer->dataAvailable())

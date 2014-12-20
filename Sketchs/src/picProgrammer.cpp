@@ -228,15 +228,19 @@ bool PicProgrammer::erase() {
 }
 
 /*---------------------------------------------------------------*/
-/*                   Show Chip Id functions                      */
+/*                   Chip Id functions                           */
 /*---------------------------------------------------------------*/
-void PicProgrammer::showDeviceId() {
-  enterProgrammingMode();
-
+unsigned int PicProgrammer::getDeviceId() {
   short deviceId = readMemory(0x3FFFFEL);
   deviceId |= readMemoryIncr() << 8;
 
-  exitProgrammingMode();
+  return deviceId;
+}
 
-  Serial.println(deviceId, HEX);
+bool PicProgrammer::isSupported(unsigned int deviceId) {
+  // If you want to test & support new device, add you PIC chip ID here
+  if (deviceId & 0xFFE0 == 0x1080)
+    return true;
+
+  return false;
 }

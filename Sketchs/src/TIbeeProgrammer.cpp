@@ -120,24 +120,25 @@ unsigned int TIbeeProgrammer::receiveBits(int n)
 /**
 * Show Chip ID and Version
 */
-void TIbeeProgrammer::showDeviceId()
+unsigned int TIbeeProgrammer::getDeviceId()
 {
-  enterProgrammingMode();
-
   // Send "get chip command"
   sendBits(B01101000, 8);
 
   // Receive output
-  unsigned int data = receiveBits(16);
-  Serial.print("CHIP ID: 0x");
-  Serial.println(data >> 8, HEX);
-  Serial.print("CHIP VERSION: 0x");
-  Serial.println(data & 0xFF, HEX);
-
-  exitProgrammingMode();
+  return receiveBits(16);
 }
 
+/**
+ * Validate Chip ID and Version
+ */
+bool TIbeeProgrammer::isSupported(unsigned int deviceId)
+{
+    if (deviceId & 0xFF00 == 0xA500)
+        return true;
 
+    return false;
+}
 
 bool TIbeeProgrammer::erase()
 {

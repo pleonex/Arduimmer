@@ -21,6 +21,11 @@
 #include "Arduino.h"
 #include "IcspProgrammer.h"
 
+//Debug instructions for 1, 2 or 3 for sending commands
+#define SEND_DEBUG_INSTR_1  B01010001
+#define SEND_DEBUG_INSTR_2  B01010010
+#define SEND_DEBUG_INSTR_3  B01010011
+
 class TIbeeProgrammer : public IcspProgrammer
 {
     public:
@@ -34,7 +39,9 @@ class TIbeeProgrammer : public IcspProgrammer
     virtual void enterProgrammingMode();
     virtual void exitProgrammingMode();
 
-    virtual void showDeviceId();
+    virtual unsigned int getDeviceId();
+    virtual bool isSupported(unsigned int deviceId);
+
     virtual bool erase();
     virtual void writeMemory(unsigned long addr, byte buf[], int bufLen);
     virtual void writeMemory(unsigned long addr, unsigned int data);
@@ -52,12 +59,4 @@ class TIbeeProgrammer : public IcspProgrammer
     unsigned int sendInstruction(byte command, byte *inst, int n);
     unsigned int readMemory(unsigned long addr, int bufLen);
 };
-
-
-
-
 #endif
-//Debug instructions for 1, 2 or 3 for sending commands
-#define SEND_DEBUG_INSTR_1  B01010001
-#define SEND_DEBUG_INSTR_2  B01010010
-#define SEND_DEBUG_INSTR_3  B01010011

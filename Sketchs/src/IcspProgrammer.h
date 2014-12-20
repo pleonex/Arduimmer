@@ -33,7 +33,9 @@ class IcspProgrammer
     virtual void enterProgrammingMode() = 0;
     virtual void exitProgrammingMode() = 0;
 
-    virtual void showDeviceId() = 0;
+    virtual unsigned int getDeviceId() = 0;
+    virtual bool isSupported(unsigned int deviceId) = 0;
+
     virtual bool erase() = 0;
     virtual void writeMemory(unsigned long addr, byte buf[], int bufLen) = 0;
     virtual void writeMemory(unsigned long addr, unsigned int data) = 0;
