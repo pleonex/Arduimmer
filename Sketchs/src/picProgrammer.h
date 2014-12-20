@@ -46,33 +46,33 @@ class PicProgrammer : public IcspProgrammer
 {
   public:
     PicProgrammer(int dataPin, int clockPin, int masterPin, int vppPin);
-  
+
     virtual boolean canRead();
     virtual boolean canWrite();
     virtual boolean canErase();
     virtual boolean canShowDeviceId();
-    
+
     virtual void enterProgrammingMode();
     virtual void exitProgrammingMode();
-    
+
     virtual void showDeviceId();
-    virtual void erase();
+    virtual bool erase();
     virtual void writeMemory(unsigned long addr, byte buf[], int bufLen);
     virtual void writeMemory(unsigned long addr, unsigned int data);
     virtual byte readMemory(unsigned long addr);
     virtual byte readMemoryIncr();
-  
+
   protected:
     virtual void init();
-    
+
   private:
     int masterPin;
     int vppPin;
-    
+
     byte receiveByte();
     byte sendInstruction(byte instr, unsigned int payload);
     void setTblPtr(unsigned long addr);
-    
+
     void writeMemoryIncr(unsigned int data);
     void writeMemoryStartProgramming(unsigned int data);
 };

@@ -24,28 +24,28 @@ class IcspProgrammer
 {
   public:
     IcspProgrammer(int dataPin, int clockPin, boolean isMsb);
-    
+
     virtual boolean canRead() = 0;
     virtual boolean canWrite() = 0;
     virtual boolean canErase() = 0;
     virtual boolean canShowDeviceId() = 0;
-    
+
     virtual void enterProgrammingMode() = 0;
     virtual void exitProgrammingMode() = 0;
-    
+
     virtual void showDeviceId() = 0;
-    virtual void erase() = 0;
+    virtual bool erase() = 0;
     virtual void writeMemory(unsigned long addr, byte buf[], int bufLen) = 0;
     virtual void writeMemory(unsigned long addr, unsigned int data) = 0;
     virtual byte readMemory(unsigned long addr) = 0;
     virtual byte readMemoryIncr() = 0;
-    
+
   protected:
     virtual void init();
-    
+
     void sendBit(byte data);
     void sendBits(unsigned int data, int n);
-    
+
     int dataPin;
     int clockPin;
     boolean isMsb;

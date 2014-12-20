@@ -139,24 +139,33 @@ void TIbeeProgrammer::showDeviceId()
 
 
 
-void TIbeeProgrammer::erase()
+bool TIbeeProgrammer::erase()
 {
-  sendbits(B00010000,8);
-  a=receiveBits(8);
-  p=a»7;
-  if (p==0){
-      return false;
+  // Send erase command and receive debug status
+  sendBits(B00010000,8);
+  byte status = receiveBits(8);
+
+  // Check if erase has started
+  byte isErasing = status >> 7;
+  if (isErasing == 0) {
+    return false;
   }
-  for(int i=1; i<=10; i++) {
-  sendbits(B00110000,8);
-  a=receiveBits(8);
-  p=a»7;
-    if (p==0){
+
+  // Wait until erase has finished or max iteration reached
+  for(int i = 1; i <= 10; i++) {
+    // Request debug status with "RD_CONFIG"
+    sendBits(B00110000,8);
+    status = receiveBits(8);
+
+    // Check if ease has finished
+    isErasing = status >> 7;
+    if (isErasing == 0){
       return true;
     }
   }
+
+  // Max iterations reached
   return false;
-}
 }
 
 

@@ -35,7 +35,7 @@ class TIbeeProgrammer : public IcspProgrammer
     virtual void exitProgrammingMode();
 
     virtual void showDeviceId();
-    virtual void erase();
+    virtual bool erase();
     virtual void writeMemory(unsigned long addr, byte buf[], int bufLen);
     virtual void writeMemory(unsigned long addr, unsigned int data);
     virtual byte readMemory(unsigned long addr);
