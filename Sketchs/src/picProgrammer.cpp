@@ -132,7 +132,7 @@ void PicProgrammer::setTblPtr(unsigned long addr) {
 /*---------------------------------------------------------------*/
 /*                       Read functions                          */
 /*---------------------------------------------------------------*/
-void PicProgrammer::readBytes(unsigned long addr, byte buf[], int bufLen) {
+void PicProgrammer::readBlock(unsigned long addr, byte buf[], int bufLen) {
   // 1º Set address into TBLPTR
   setTblPtr(addr);
 

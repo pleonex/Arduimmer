@@ -45,7 +45,7 @@ class IcspProgrammer
     void writeUInt16(unsigned long addr, unsigned short data);
     void writeUInt32(unsigned long addr, unsigned int data);
 
-    virtual void readBytes(unsigned long addr, byte buf[], int bufLen) = 0;
+    void readBytes(unsigned long addr, byte buf[], int bufLen);
     byte readByte(unsigned long addr);
     unsigned short readUInt16(unsigned long addr);
     unsigned int readUInt32(unsigned long addr);
@@ -56,6 +56,7 @@ class IcspProgrammer
     void sendBit(byte data);
     void sendBits(unsigned int data, int n);
 
+    virtual void readBlock(unsigned long addr, byte buf[], int bufLen) = 0;
     virtual void writeBlock(unsigned long addr, byte buf[], int bufLen) = 0;
     virtual int getMaxBufferLength(unsigned long address) = 0;
 

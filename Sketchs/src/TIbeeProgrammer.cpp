@@ -232,7 +232,7 @@ byte TIbeeProgrammer::readByte(unsigned long addr)
   return sendInstruction(SEND_DEBUG_INSTR_1, instr, 1);
 }
 
-void TIbeeProgrammer::readBytes(unsigned long addr, byte buffer[], int bufLen)
+void TIbeeProgrammer::readBlock(unsigned long addr, byte buffer[], int bufLen)
 {
   for(int i = 0; i < bufLen; i++){
     buffer[i] = readByte(addr + i);

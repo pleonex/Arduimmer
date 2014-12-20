@@ -61,6 +61,28 @@ void IcspProgrammer::sendBits(unsigned int data, int n) {
 /*---------------------------------------------------------------*/
 /*                       Read functions                          */
 /*---------------------------------------------------------------*/
+void IcspProgrammer::readBytes(unsigned long addr, byte buf[], int bufLen) {
+  // Check the maximum buffer size, and if lower just read
+  int maxBufLen = getMaxBufferLength(addr);
+  if (bufLen < maxBufLen) {
+    readBlock(addr, buf, bufLen);
+    return;
+  }
+
+  // Let's split the buffer
+  byte block[BUFFER_LENGTH];
+  for (int start = 0; start < bufLen; start += maxBufLen) {
+    // Block length
+    int blockLen = (start + maxBufLen < bufLen) ? maxBufLen : bufLen - start;
+
+    // Read block
+    readBlock(addr + start, block, blockLen);
+
+    // Copy block of data
+    for (int i = 0; i < blockLen; i++)
+      buf[start + i] = block[i];
+  }
+}
 
 /**
  * Read a byte from the memory.

@@ -59,11 +59,11 @@ class PicProgrammer : public IcspProgrammer
     virtual bool isSupported(unsigned int deviceId);
 
     virtual bool erase();
-    virtual void readBytes(unsigned long addr, byte buf[], int bufLen);
 
   protected:
     virtual void init();
 
+    virtual void readBlock(unsigned long addr, byte buf[], int bufLen);
     virtual void writeBlock(unsigned long addr, byte buf[], int bufLen);
     virtual int getMaxBufferLength(unsigned long address);
 
