@@ -102,6 +102,28 @@ unsigned int IcspProgrammer::readUInt32(unsigned long addr) {
 /*---------------------------------------------------------------*/
 /*                      Write functions                          */
 /*---------------------------------------------------------------*/
+void IcspProgrammer::writeBytes(unsigned long addr, byte buf[], int bufLen) {
+  // Check the maximum buffer size, and if lower just write
+  int maxBufLen = getMaxBufferLength(addr);
+  if (bufLen < maxBufLen) {
+    writeBlock(addr, buf, bufLen);
+    return;
+  }
+
+  // Let's split the buffer
+  byte block[BUFFER_LENGTH];
+  for (int start = 0; start < bufLen; start += maxBufLen) {
+    // Block length
+    int blockLen = (start + maxBufLen < bufLen) ? maxBufLen : bufLen - start;
+
+    // Copy block of data
+    for (int i = 0; i < blockLen; i++)
+      block[i] = buf[start + i];
+
+    // Write block
+    writeBlock(addr + start, block, blockLen);
+  }
+}
 
 void IcspProgrammer::writeByte(unsigned long addr, byte data) {
   byte buffer[1] = { data };

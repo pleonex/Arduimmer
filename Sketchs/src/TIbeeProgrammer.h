@@ -43,11 +43,13 @@ class TIbeeProgrammer : public IcspProgrammer
     virtual bool isSupported(unsigned int deviceId);
 
     virtual bool erase();
-    virtual void writeBytes(unsigned long addr, byte buf[], int bufLen);
     virtual void readBytes(unsigned long addr, byte buf[], int bufLen);
 
   protected:
     virtual void init();
+
+    virtual void writeBlock(unsigned long addr, byte buf[], int bufLen);
+    virtual int getMaxBufferLength(unsigned long address);
 
   private:
     int resetPin;

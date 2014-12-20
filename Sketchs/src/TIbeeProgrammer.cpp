@@ -182,7 +182,7 @@ bool TIbeeProgrammer::erase()
 /*---------------------------------------------------------------*/
 /*                      Write functions                          */
 /*---------------------------------------------------------------*/
-void TIbeeProgrammer::writeBytes(unsigned long addr, byte buf[], int bufLen)
+void TIbeeProgrammer::writeBlock(unsigned long addr, byte buf[], int bufLen)
 {
   unsigned char instr[3];
 
@@ -208,6 +208,10 @@ void TIbeeProgrammer::writeBytes(unsigned long addr, byte buf[], int bufLen)
     sendInstruction(SEND_DEBUG_INSTR_1, instr, 1);
 
   }
+}
+
+int TIbeeProgrammer::getMaxBufferLength(unsigned long address) {
+  return 1024;
 }
 
 /*---------------------------------------------------------------*/

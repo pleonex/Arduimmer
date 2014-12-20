@@ -20,6 +20,8 @@
 #define IcspProgrammer_h
 #include "Arduino.h"
 
+#define BUFFER_LENGTH 2048
+
 class IcspProgrammer
 {
   public:
@@ -38,7 +40,7 @@ class IcspProgrammer
 
     virtual bool erase() = 0;
 
-    virtual void writeBytes(unsigned long addr, byte buf[], int bufLen) = 0;
+    void writeBytes(unsigned long addr, byte buf[], int bufLen);
     void writeByte(unsigned long addr, byte data);
     void writeUInt16(unsigned long addr, unsigned short data);
     void writeUInt32(unsigned long addr, unsigned int data);
@@ -53,6 +55,9 @@ class IcspProgrammer
 
     void sendBit(byte data);
     void sendBits(unsigned int data, int n);
+
+    virtual void writeBlock(unsigned long addr, byte buf[], int bufLen) = 0;
+    virtual int getMaxBufferLength(unsigned long address) = 0;
 
     int dataPin;
     int clockPin;
