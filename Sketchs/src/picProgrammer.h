@@ -30,6 +30,7 @@
 #define CODE_BLOCK_BUFFER  32
 #define CONF_BLOCK_BUFFER  1
 #define IDLO_BLOCK_BUFFER  8
+#define MAX_BLOCK_BUFFER   32
 
 #define InstCore                 0x0
 #define InstShiftOut             0x2
@@ -75,6 +76,8 @@ class PicProgrammer : public IcspProgrammer
 
     byte readNextByte();
     void writeDirect(unsigned long addr, unsigned int data);
+    void writeBlock(unsigned long addr, byte buf[], int bufLen);
+    int getMaxBufferLength(unsigned long address);
 };
 
 #endif

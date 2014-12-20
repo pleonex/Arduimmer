@@ -152,6 +152,43 @@ byte PicProgrammer::readNextByte() {
 /*                      Write functions                          */
 /*---------------------------------------------------------------*/
 void PicProgrammer::writeBytes(unsigned long addr, byte buf[], int bufLen) {
+  // Check the maximum buffer size, and if lower just write
+  int maxBufLen = getMaxBufferLength(addr);
+  if (bufLen < maxBufLen) {
+    writeBlock(addr, buf, bufLen);
+    return;
+  }
+
+  // Let's split the buffer
+  byte block[MAX_BLOCK_BUFFER];
+  for (int start = 0; start < bufLen; start += maxBufLen) {
+    // Block length
+    int blockLen = (start + maxBufLen < bufLen) ? maxBufLen : bufLen - start;
+
+    // Copy block of data
+    for (int i = 0; i < blockLen; i++)
+      block[i] = buf[start + i];
+
+    // Write block
+    writeBlock(addr + start, block, blockLen);
+  }
+}
+
+int PicProgrammer::getMaxBufferLength(unsigned long address) {
+  int bufferLength = -1;
+  if (address < BOOT_BLOCK_LENGTH)
+    bufferLength = BOOT_BLOCK_BUFFER;
+  else if ((address & 0xFF0000) == 0x000000)
+    bufferLength = CODE_BLOCK_BUFFER;
+  else if ((address & 0xFF0000) == 0x300000)
+    bufferLength = CONF_BLOCK_BUFFER;
+  else if ((address & 0xFF0000) == 0x200000)
+    bufferLength = IDLO_BLOCK_BUFFER;
+
+  return bufferLength;
+}
+
+void PicProgrammer::writeBlock(unsigned long addr, byte buf[], int bufLen) {
   // Configure Device for Writes
   sendInstruction(InstCore, 0x8EA6);  // BSF  EECON1, EEPGD
   if (bufLen > 1)
