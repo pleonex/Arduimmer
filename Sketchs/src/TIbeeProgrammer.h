@@ -21,11 +21,12 @@
 #include "Arduino.h"
 #include "IcspProgrammer.h"
 
-//Debug instructions for 1, 2 or 3 for sending commands
-#define SEND_DEBUG_INSTR_1  B01010001
-#define SEND_DEBUG_INSTR_2  B01010010
-#define SEND_DEBUG_INSTR_3  B01010011
-#define CMD_WR_CONFIG       0x19
+#define CMD_DEBUG_INSTR_1  B01010001    // Run 1 instruction in CPU
+#define CMD_DEBUG_INSTR_2  B01010010    // Run 2 instructions in CPU
+#define CMD_DEBUG_INSTR_3  B01010011    // Run 3 instructions in CPU
+#define CMD_CHIP_ERASE     B00010000    // Erase the chip
+#define CMD_WR_CONFIG      B00011001    // Write debug configuration
+#define CMD_RD_CONFIG      B00100000    // Read debug configuration
 
 #define DUP_CLKCONSTA 0x709E  // Sys clock status
 #define DUP_CLKCONCMD 0x70C6  // Sys clock configuration

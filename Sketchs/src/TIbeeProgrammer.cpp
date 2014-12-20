@@ -115,23 +115,24 @@ unsigned int TIbeeProgrammer::receiveBits(int n)
  */
 unsigned int TIbeeProgrammer::sendInstruction(byte command, byte *inst, int n)
 {
-  //Send command
+  // Send command
   sendBits(command, 8);
 
-  //Send bytes
-  for(int i = 0; i < n; i++){
+  // Send bytes
+  for(int i = 0; i < n; i++)
     sendBits(inst[i], 8);
-  }
 
-  unsigned int output = receiveBits(8);
-
-  return output;
+  // Receive output byte
+  return receiveBits(8);
 }
 
 void TIbeeProgrammer::initDMA() {
   // Enable DMA (Disable DMA_PAUSE bit in debug configuration)
   byte debug_config = 0x22;
-  sendInstruction(CMD_WR_CONFIG, &debug_config, 1);
+
+  sendBits(CMD_WR_CONFIG, 8);
+  sendBits(debug_config, 8);
+  receiveBits(8);
 }
 
 /*---------------------------------------------------------------*/
@@ -161,32 +162,28 @@ bool TIbeeProgrammer::erase()
 {
   // Initialize
   // Switch DUP to external crystal osc. (XOSC) and wait for it to be stable.
-  // This is recommended if XOSC is available during programming. If
-  // XOSC is not available, comment out these two lines.
   writeByteXDATA(DUP_CLKCONCMD, 0x80);
   while (readByteXDATA(DUP_CLKCONSTA) != 0x80);
 
   // Send erase command and receive debug status
-  sendBits(B00010000,8);
+  sendBits(CMD_CHIP_ERASE, 8);
   byte status = receiveBits(8);
 
   // Check if erase has started
   byte isErasing = status >> 7;
-  if (isErasing == 0) {
+  if (isErasing == 0)
     return false;
-  }
 
   // Wait until erase has finished or max iteration reached
   for(int i = 1; i <= 10; i++) {
     // Request debug status with "RD_CONFIG"
-    sendBits(B00110000,8);
+    sendBits(CMD_RD_CONFIG, 8);
     status = receiveBits(8);
 
     // Check if ease has finished
     isErasing = status >> 7;
-    if (isErasing == 0){
+    if (isErasing == 0)
       return true;
-    }
   }
 
   // Max iterations reached
@@ -223,21 +220,21 @@ void TIbeeProgrammer::writeBlockXDATA(unsigned long addr, byte buf[], int bufLen
   instr[1] = highByte(addr);
   instr[2] = lowByte(addr);
 
-  sendInstruction(SEND_DEBUG_INSTR_3, instr, 3);
+  sendInstruction(CMD_DEBUG_INSTR_3, instr, 3);
 
   for(int i = 0; i < bufLen; i++){
     //MOV A, values[i]
     instr[0] = 0x74;
     instr[1] = buf[i];
-    sendInstruction(SEND_DEBUG_INSTR_2, instr, 2);
+    sendInstruction(CMD_DEBUG_INSTR_2, instr, 2);
 
     //MOV A, values[i]
     instr[0] = 0xF0;
-    sendInstruction(SEND_DEBUG_INSTR_1, instr, 1);
+    sendInstruction(CMD_DEBUG_INSTR_1, instr, 1);
 
     // INC DPTR
     instr[0] = 0xA3;
-    sendInstruction(SEND_DEBUG_INSTR_1, instr, 1);
+    sendInstruction(CMD_DEBUG_INSTR_1, instr, 1);
   }
 }
 
@@ -256,9 +253,9 @@ byte TIbeeProgrammer::readByteXDATA(unsigned long addr) {
   instr[0] = 0x90;
   instr[1] = highByte(addr);
   instr[2] = lowByte(addr);
-  sendInstruction(SEND_DEBUG_INSTR_3, instr, 3);
+  sendInstruction(CMD_DEBUG_INSTR_3, instr, 3);
 
   // MOVX A, @DPTR
   instr[0] = 0xE0;
-  return sendInstruction(SEND_DEBUG_INSTR_1, instr, 1);
+  return sendInstruction(CMD_DEBUG_INSTR_1, instr, 1);
 }
