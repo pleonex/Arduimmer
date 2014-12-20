@@ -40,7 +40,7 @@ void IcspProgrammer::sendBit(byte data) {
   // while the clockPin is high.
   digitalWrite(clockPin, HIGH);
   digitalWrite(dataPin, data);
-  
+
   digitalWrite(clockPin, LOW);
   digitalWrite(dataPin, LOW);
 }
@@ -55,5 +55,42 @@ void IcspProgrammer::sendBits(unsigned int data, int n) {
   } else {
     for (int i = 0; i < n; i++)
       sendBit(bitRead(data, i));
+  }
+}
+
+/**
+ * Read a byte from the memory.
+ */
+byte IcspProgrammer::readByte(unsigned long addr) {
+  byte buffer[1];
+  readBytes(addr, buffer, 1);
+  return buffer[0];
+}
+
+/**
+ * Read an integer value of 16 bits.
+ */
+unsigned short IcspProgrammer::readUInt16(unsigned long addr) {
+  byte buffer[2];
+  readBytes(addr, buffer, 2);
+
+  if (isMsb) {
+    return (buffer[0] << 8) | buffer[1];
+  } else {
+    return (buffer[1] << 8) | buffer[0];
+  }
+}
+
+/**
+ * Read an integer value of 32 bits.
+ */
+unsigned int IcspProgrammer::readUInt32(unsigned long addr) {
+  byte buffer[4];
+  readBytes(addr, buffer, 4);
+
+  if (isMsb) {
+    return (buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3];
+  } else {
+    return (buffer[3] << 24) | (buffer[2] << 16) | (buffer[1] << 8) | buffer[0];
   }
 }

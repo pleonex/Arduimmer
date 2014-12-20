@@ -33,6 +33,7 @@ const char CODE[] = "Pro!";
 const char FINISHED[] = "Done!";
 const char ERROR_UNKNOWN_DEVICE[] = "E01";
 const char ERROR_INVALID_DEVICE[] = "E02";
+const char ERROR_DATA_MISMATCH[]  = "E03";
 
 /*---------------------------------------------------------------*/
 /*                            Main setup                         */
@@ -105,17 +106,20 @@ void program() {
 
   // Enter debug mode
   programmer->enterProgrammingMode();
+  bool error = false;
 
   // Get device ID and verify it
   unsigned int deviceId = programmer->getDeviceId();
-  if (!programmer->isSupported(deviceId)) {
+  error = !programmer->isSupported(deviceId);
+  if (error)
     Serial.println(ERROR_INVALID_DEVICE);
-    return;
-  }
 
   // Write and verify the program
-  while (serialBuffer->dataAvailable())
-    writeNextBlock(programmer, serialBuffer);
+  while (serialBuffer->dataAvailable() && !error) {
+    error = writeNextBlock(programmer, serialBuffer);
+    if (error)
+      Serial.println(ERROR_DATA_MISMATCH);
+  }
 
   // Exit programming mode
   programmer->exitProgrammingMode();
@@ -153,20 +157,25 @@ void serialReceiveString(char buffer[], int len) {
 /**
  * Write the next data block into the device memory.
  */
-void writeNextBlock(IcspProgrammer* programmer, SerialBuffer* serialBuffer) {
-    unsigned long address;
-    byte bufferWrite[BUFFER_LENGTH];
-    byte bufferRead[BUFFER_LENGTH];
+bool writeNextBlock(IcspProgrammer* programmer, SerialBuffer* serialBuffer) {
+  unsigned long address;
+  byte bufferWrite[BUFFER_LENGTH];
+  byte bufferRead[BUFFER_LENGTH];
 
-    // Get data to write
-    int bufferLength = serialBuffer->nextData(&address, bufferWrite);
+  // Get data to write
+  int bufferLength = serialBuffer->nextData(&address, bufferWrite);
 
-    // Write it
-    programmer->writeMemory(address, bufferWrite, bufferLength);
+  // Write it
+  programmer->writeMemory(address, bufferWrite, bufferLength);
 
-    // Read it again
-    // TODO
+  // Read it again
+  programmer->readBytes(address, bufferRead, bufferLength);
 
-    // Verify it
-    // TODO
+  // Verify it
+  bool error = false;
+  for (int i = 0; i < bufferLength && !error; i++)
+    if (bufferWrite[i] != bufferRead[i])
+      error = true;
+
+  return error;
 }

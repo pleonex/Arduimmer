@@ -45,8 +45,7 @@ class TIbeeProgrammer : public IcspProgrammer
     virtual bool erase();
     virtual void writeMemory(unsigned long addr, byte buf[], int bufLen);
     virtual void writeMemory(unsigned long addr, unsigned int data);
-    virtual byte readMemory(unsigned long addr);
-    virtual byte readMemoryIncr();
+    virtual void readBytes(unsigned long addr, byte buf[], int bufLen);
 
   protected:
     virtual void init();
@@ -57,6 +56,6 @@ class TIbeeProgrammer : public IcspProgrammer
     unsigned int receiveBits(int n);
 
     unsigned int sendInstruction(byte command, byte *inst, int n);
-    unsigned int readMemory(unsigned long addr, int bufLen);
+    byte readByte(unsigned long addr);
 };
 #endif

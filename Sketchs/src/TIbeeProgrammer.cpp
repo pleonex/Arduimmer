@@ -241,9 +241,10 @@ void TIbeeProgrammer::writeMemory(unsigned long addr, unsigned int data)
   sendInstruction(SEND_DEBUG_INSTR_1, instr, 1);
 }
 
-
-
-byte TIbeeProgrammer::readMemory(unsigned long addr)
+/*---------------------------------------------------------------*/
+/*                       Read functions                          */
+/*---------------------------------------------------------------*/
+byte TIbeeProgrammer::readByte(unsigned long addr)
 {
   unsigned char instr[3];
 
@@ -258,23 +259,9 @@ byte TIbeeProgrammer::readMemory(unsigned long addr)
   return sendInstruction(SEND_DEBUG_INSTR_1, instr, 1);
 }
 
-
-
-unsigned int  TIbeeProgrammer::readMemory(unsigned long addr, int bufLen)
+void TIbeeProgrammer::readBytes(unsigned long addr, byte buffer[], int bufLen)
 {
-  unsigned int data[bufLen];
-
-  for(unsigned long i = 0; i < bufLen; i++){
-    data[i] = readMemory(addr + i);
+  for(int i = 0; i < bufLen; i++){
+    buffer[i] = readByte(addr + i);
   }
-
-  return *data;
-}
-
-
-
-byte TIbeeProgrammer::readMemoryIncr()
-{
-  // TODO
-  return 0xFF;
 }

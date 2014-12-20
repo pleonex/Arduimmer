@@ -132,15 +132,19 @@ void PicProgrammer::setTblPtr(unsigned long addr) {
 /*---------------------------------------------------------------*/
 /*                       Read functions                          */
 /*---------------------------------------------------------------*/
-byte PicProgrammer::readMemory(unsigned long addr) {
+void PicProgrammer::readBytes(unsigned long addr, byte buf[], int bufLen) {
   // 1º Set address into TBLPTR
   setTblPtr(addr);
 
   // 2º Read with Post-Increment
-  return sendInstruction(InstTblReadPostIncr, 0);
+  buf[0] = sendInstruction(InstTblReadPostIncr, 0);
+
+  // 3º Read as many bytes as needed
+  for (int i = 1; i < bufLen; i++)
+    buf[i] = readNextByte();
 }
 
-byte PicProgrammer::readMemoryIncr() {
+byte PicProgrammer::readNextByte() {
   return sendInstruction(InstTblReadPostIncr, 0);
 }
 
@@ -231,10 +235,7 @@ bool PicProgrammer::erase() {
 /*                   Chip Id functions                           */
 /*---------------------------------------------------------------*/
 unsigned int PicProgrammer::getDeviceId() {
-  short deviceId = readMemory(0x3FFFFEL);
-  deviceId |= readMemoryIncr() << 8;
-
-  return deviceId;
+  return readUInt16(0x3FFFFEL);
 }
 
 bool PicProgrammer::isSupported(unsigned int deviceId) {

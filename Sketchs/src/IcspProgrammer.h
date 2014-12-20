@@ -39,8 +39,11 @@ class IcspProgrammer
     virtual bool erase() = 0;
     virtual void writeMemory(unsigned long addr, byte buf[], int bufLen) = 0;
     virtual void writeMemory(unsigned long addr, unsigned int data) = 0;
-    virtual byte readMemory(unsigned long addr) = 0;
-    virtual byte readMemoryIncr() = 0;
+
+    virtual void readBytes(unsigned long addr, byte buf[], int bufLen) = 0;
+    byte readByte(unsigned long addr);
+    unsigned short readUInt16(unsigned long addr);
+    unsigned int readUInt32(unsigned long addr);
 
   protected:
     virtual void init();

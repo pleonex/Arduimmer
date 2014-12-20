@@ -61,8 +61,7 @@ class PicProgrammer : public IcspProgrammer
     virtual bool erase();
     virtual void writeMemory(unsigned long addr, byte buf[], int bufLen);
     virtual void writeMemory(unsigned long addr, unsigned int data);
-    virtual byte readMemory(unsigned long addr);
-    virtual byte readMemoryIncr();
+    virtual void readBytes(unsigned long addr, byte buf[], int bufLen);
 
   protected:
     virtual void init();
@@ -77,6 +76,8 @@ class PicProgrammer : public IcspProgrammer
 
     void writeMemoryIncr(unsigned int data);
     void writeMemoryStartProgramming(unsigned int data);
+
+    byte readNextByte();
 };
 
 #endif
