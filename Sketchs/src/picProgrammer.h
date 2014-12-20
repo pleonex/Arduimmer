@@ -47,11 +47,6 @@ class PicProgrammer : public IcspProgrammer
   public:
     PicProgrammer(int dataPin, int clockPin, int masterPin, int vppPin);
 
-    virtual boolean canRead();
-    virtual boolean canWrite();
-    virtual boolean canErase();
-    virtual boolean canShowDeviceId();
-
     virtual void enterProgrammingMode();
     virtual void exitProgrammingMode();
 

@@ -27,11 +27,6 @@ class IcspProgrammer
   public:
     IcspProgrammer(int dataPin, int clockPin, boolean isMsb);
 
-    virtual boolean canRead() = 0;
-    virtual boolean canWrite() = 0;
-    virtual boolean canErase() = 0;
-    virtual boolean canShowDeviceId() = 0;
-
     virtual void enterProgrammingMode() = 0;
     virtual void exitProgrammingMode() = 0;
 

@@ -35,26 +35,6 @@ void PicProgrammer::init()
   pinMode(vppPin, OUTPUT);
 }
 
-boolean PicProgrammer::canRead()
-{
-  return true;
-}
-
-boolean PicProgrammer::canWrite()
-{
-  return true;
-}
-
-boolean PicProgrammer::canErase()
-{
-  return true;
-}
-
-boolean PicProgrammer::canShowDeviceId()
-{
-  return true;
-}
-
 void PicProgrammer::enterProgrammingMode()
 {
   // 1º Set PGC & PGD low

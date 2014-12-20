@@ -36,26 +36,6 @@ void TIbeeProgrammer::init()
   pinMode(resetPin, OUTPUT);
 }
 
-boolean TIbeeProgrammer::canRead()
-{
-  return false;
-}
-
-boolean TIbeeProgrammer::canWrite()
-{
-  return false;
-}
-
-boolean TIbeeProgrammer::canErase()
-{
-  return false;
-}
-
-boolean TIbeeProgrammer::canShowDeviceId()
-{
-  return true;
-}
-
 /**
 * Enter into Debug Mode.
 */

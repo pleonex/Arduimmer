@@ -36,11 +36,6 @@ class TIbeeProgrammer : public IcspProgrammer
     public:
     TIbeeProgrammer(int dataPin, int clockPin, int resetPin);
 
-    virtual boolean canRead();
-    virtual boolean canWrite();
-    virtual boolean canErase();
-    virtual boolean canShowDeviceId();
-
     virtual void enterProgrammingMode();
     virtual void exitProgrammingMode();
 
