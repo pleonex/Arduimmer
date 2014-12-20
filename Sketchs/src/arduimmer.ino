@@ -25,6 +25,15 @@ const int CMD_LENGTH = 4;
 char command[CMD_LENGTH + 1];
 
 /*---------------------------------------------------------------*/
+/*                           Messages                            */
+/*---------------------------------------------------------------*/
+const char PING[] = "Hey!";
+const char PONG[] = "Yes?";
+const char CODE[] = "Pro!";
+const char FINISHED[] = "Done!";
+const char ERROR_UNK_DEVICE[] = "E01";
+
+/*---------------------------------------------------------------*/
 /*                            Main setup                         */
 /* Just setup serial port                                        */
 /*---------------------------------------------------------------*/
@@ -52,9 +61,9 @@ void serialCommands() {
   Serial.readBytes(command, CMD_LENGTH);
 
   // Procress command
-  if (strcmp(command, "Hey!") == 0)
+  if (strcmp(command, PING) == 0)
     ping();
-  else if (strcmp(command, "Pro!") == 0)
+  else if (strcmp(command, CODE) == 0)
     program();
 }
 
@@ -63,7 +72,7 @@ void serialCommands() {
 /* The PC uses this method to autodetect the USB Arduino port    */
 /*---------------------------------------------------------------*/
 void ping() {
-  Serial.println("Yes?");
+  Serial.println(PONG);
 }
 
 /*---------------------------------------------------------------*/
@@ -89,7 +98,7 @@ void program() {
   // Create the programmer
   IcspProgrammer* programmer = programmerFactory(deviceName, ports);
   if (programmer == NULL) {
-    Serial.println("Unknown device");
+    Serial.println(ERROR_UNK_DEVICE);
     return;
   }
 
@@ -102,13 +111,13 @@ void program() {
 
   // Write and verify the program
   while (serialBuffer->dataAvailable())
-    writeBlockMemory(programmer, serialBuffer);
+    writeNextBlock(programmer, serialBuffer);
 
   // Exit programming mode
   programmer->exitProgrammingMode();
 
   // Say goodbye!
-  Serial.println("Have a nice day :)");
+  Serial.println(FINISHED);
 }
 
 /*
@@ -116,22 +125,14 @@ void program() {
  */
 IcspProgrammer* programmerFactory(char deviceName[], int ports[])
 {
-  char *fullName;
   IcspProgrammer* programmer = NULL;
 
   // Choose by device name
   if (strcmp(deviceName, "pic18f") == 0){
-    fullName   = "PIC18F2xxx / PIC18F4xxx";
     programmer = new PicProgrammer(ports[0], ports[1], ports[2], ports[3]);
   } else if (strcmp(deviceName, "cc25") == 0) {
-    fullName   = "CC25xx";
     programmer = new TIbeeProgrammer(ports[0], ports[1], ports[2]);
   }
-
-  // Show selection
-  Serial.print("Selected ");
-  Serial.print(fullName == NULL ? deviceName : fullName);
-  Serial.println(" programmer");
 
   return programmer;
 }
@@ -146,28 +147,22 @@ void serialReceiveString(char buffer[], int len) {
 }
 
 /**
- * Write data into a block of memory.
+ * Write the next data block into the device memory.
  */
-void writeBlockMemory(IcspProgrammer* programmer, SerialBuffer* serialBuffer) {
+void writeNextBlock(IcspProgrammer* programmer, SerialBuffer* serialBuffer) {
     unsigned long address;
-    byte buffer[BUFFER_LENGTH];
+    byte bufferWrite[BUFFER_LENGTH];
+    byte bufferRead[BUFFER_LENGTH];
 
     // Get data to write
-    int bufferLength = serialBuffer->nextData(&address, buffer);
+    int bufferLength = serialBuffer->nextData(&address, bufferWrite);
 
     // Write it
-    programmer->writeMemory(address, buffer, bufferLength);
+    programmer->writeMemory(address, bufferWrite, bufferLength);
 
     // Read it again
     // TODO
 
     // Verify it
     // TODO
-
-    // Show how good is going everything :D
-    Serial.print("\t* |");
-    if (bufferLength < 10)
-      Serial.print("0");
-    Serial.print(bufferLength);
-    Serial.println(" bytes written correctly");
 }
