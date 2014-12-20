@@ -22,7 +22,8 @@ along with Arduimmer.  If not, see <http://www.gnu.org/licenses/>.
 TIbeeProgrammer::TIbeeProgrammer(int dataPin, int clockPin, int resetPin)
 : IcspProgrammer(dataPin, clockPin, true)
 {
-  this->resetPin = resetPin;
+  this->resetPin  = resetPin;
+  this->enableDMA = false;
   init();
 }
 
@@ -127,6 +128,12 @@ unsigned int TIbeeProgrammer::sendInstruction(byte command, byte *inst, int n)
   return output;
 }
 
+void TIbeeProgrammer::initDMA() {
+  // Enable DMA (Disable DMA_PAUSE bit in debug configuration)
+  byte debug_config = 0x22;
+  sendInstruction(CMD_WR_CONFIG, &debug_config, 1);
+}
+
 /*---------------------------------------------------------------*/
 /*                   Chip Id functions                           */
 /*---------------------------------------------------------------*/
@@ -152,6 +159,13 @@ bool TIbeeProgrammer::isSupported(unsigned int deviceId)
 /*---------------------------------------------------------------*/
 bool TIbeeProgrammer::erase()
 {
+  // Initialize
+  // Switch DUP to external crystal osc. (XOSC) and wait for it to be stable.
+  // This is recommended if XOSC is available during programming. If
+  // XOSC is not available, comment out these two lines.
+  writeByteXDATA(DUP_CLKCONCMD, 0x80);
+  while (readByteXDATA(DUP_CLKCONSTA) != 0x80);
+
   // Send erase command and receive debug status
   sendBits(B00010000,8);
   byte status = receiveBits(8);
@@ -184,7 +198,25 @@ bool TIbeeProgrammer::erase()
 /*---------------------------------------------------------------*/
 void TIbeeProgrammer::writeBlock(unsigned long addr, byte buf[], int bufLen)
 {
-  unsigned char instr[3];
+  // Make sure the DMA is enabled
+  if (!enableDMA) {
+    initDMA();
+    enableDMA = true;
+  }
+
+  // TODO
+}
+
+int TIbeeProgrammer::getMaxBufferLength(unsigned long address) {
+  return 1024;
+}
+
+void TIbeeProgrammer::writeByteXDATA(unsigned long addr, byte value) {
+  // TODO
+}
+
+void TIbeeProgrammer::writeBlockXDATA(unsigned long addr, byte buf[], int bufLen) {
+  byte instr[3];
 
   //MOV DPTR, Address
   instr[0] = 0x90;
@@ -206,20 +238,19 @@ void TIbeeProgrammer::writeBlock(unsigned long addr, byte buf[], int bufLen)
     // INC DPTR
     instr[0] = 0xA3;
     sendInstruction(SEND_DEBUG_INSTR_1, instr, 1);
-
   }
-}
-
-int TIbeeProgrammer::getMaxBufferLength(unsigned long address) {
-  return 1024;
 }
 
 /*---------------------------------------------------------------*/
 /*                       Read functions                          */
 /*---------------------------------------------------------------*/
-byte TIbeeProgrammer::readByte(unsigned long addr)
+void TIbeeProgrammer::readBlock(unsigned long addr, byte buffer[], int bufLen)
 {
-  unsigned char instr[3];
+  // TODO
+}
+
+byte TIbeeProgrammer::readByteXDATA(unsigned long addr) {
+  byte instr[3];
 
   // MOV DPTR, address
   instr[0] = 0x90;
@@ -230,11 +261,4 @@ byte TIbeeProgrammer::readByte(unsigned long addr)
   // MOVX A, @DPTR
   instr[0] = 0xE0;
   return sendInstruction(SEND_DEBUG_INSTR_1, instr, 1);
-}
-
-void TIbeeProgrammer::readBlock(unsigned long addr, byte buffer[], int bufLen)
-{
-  for(int i = 0; i < bufLen; i++){
-    buffer[i] = readByte(addr + i);
-  }
 }

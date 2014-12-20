@@ -25,6 +25,10 @@
 #define SEND_DEBUG_INSTR_1  B01010001
 #define SEND_DEBUG_INSTR_2  B01010010
 #define SEND_DEBUG_INSTR_3  B01010011
+#define CMD_WR_CONFIG       0x19
+
+#define DUP_CLKCONSTA 0x709E  // Sys clock status
+#define DUP_CLKCONCMD 0x70C6  // Sys clock configuration
 
 class TIbeeProgrammer : public IcspProgrammer
 {
@@ -53,10 +57,14 @@ class TIbeeProgrammer : public IcspProgrammer
 
   private:
     int resetPin;
+    bool enableDMA;
 
     unsigned int receiveBits(int n);
-
     unsigned int sendInstruction(byte command, byte *inst, int n);
-    byte readByte(unsigned long addr);
+
+    void initDMA();
+    void writeByteXDATA(unsigned long addr, byte value);
+    void writeBlockXDATA(unsigned long addr, byte buf[], int bufLen);
+    byte readByteXDATA(unsigned long addr);
 };
 #endif
