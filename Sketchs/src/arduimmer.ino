@@ -174,7 +174,7 @@ bool writeNextBlock(IcspProgrammer* programmer, SerialBuffer* serialBuffer) {
   // Verify it
   bool success = true;
   for (int i = 0; i < bufferLength && success; i++)
-    success = (bufferWrite[i] == bufferRead[i])
+    success = (bufferWrite[i] == bufferRead[i]);
 
   return success;
 }

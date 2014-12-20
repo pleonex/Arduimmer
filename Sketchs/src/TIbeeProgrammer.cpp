@@ -55,8 +55,6 @@ boolean TIbeeProgrammer::canShowDeviceId()
   return true;
 }
 
-
-
 /**
 * Enter into Debug Mode.
 */
@@ -72,16 +70,12 @@ void TIbeeProgrammer::enterProgrammingMode()
   digitalWrite(resetPin, HIGH);
 }
 
-
-
 void TIbeeProgrammer::exitProgrammingMode()
 {
   // This is a guess... no official docs
   digitalWrite(resetPin, LOW);
   digitalWrite(resetPin, HIGH);
 }
-
-
 
 /**
 * Receive a bit stream from the processor.
@@ -115,11 +109,27 @@ unsigned int TIbeeProgrammer::receiveBits(int n)
   return data;
 }
 
-
-
 /**
-* Show Chip ID and Version
-*/
+ * Send 1, 2 or 3 instructions
+ */
+unsigned int TIbeeProgrammer::sendInstruction(byte command, byte *inst, int n)
+{
+  //Send command
+  sendBits(command, 8);
+
+  //Send bytes
+  for(int i = 0; i < n; i++){
+    sendBits(inst[i], 8);
+  }
+
+  unsigned int output = receiveBits(8);
+
+  return output;
+}
+
+/*---------------------------------------------------------------*/
+/*                   Chip Id functions                           */
+/*---------------------------------------------------------------*/
 unsigned int TIbeeProgrammer::getDeviceId()
 {
   // Send "get chip command"
@@ -129,9 +139,6 @@ unsigned int TIbeeProgrammer::getDeviceId()
   return receiveBits(16);
 }
 
-/**
- * Validate Chip ID and Version
- */
 bool TIbeeProgrammer::isSupported(unsigned int deviceId)
 {
     if (deviceId & 0xFF00 == 0xA500)
@@ -140,6 +147,9 @@ bool TIbeeProgrammer::isSupported(unsigned int deviceId)
     return false;
 }
 
+/*---------------------------------------------------------------*/
+/*                      Erase functions                          */
+/*---------------------------------------------------------------*/
 bool TIbeeProgrammer::erase()
 {
   // Send erase command and receive debug status
@@ -169,28 +179,10 @@ bool TIbeeProgrammer::erase()
   return false;
 }
 
-
-
-//send 1, 2 or 3 instruction
-unsigned int TIbeeProgrammer::sendInstruction(byte command, byte *inst, int n)
-{
-  //Send command
-  sendBits(command, 8);
-
-  //Send bytes
-  for(int i = 0; i < n; i++){
-    sendBits(inst[i], 8);
-  }
-
-  unsigned int output = receiveBits(8);
-
-  return output;
-}
-
-
-
-//Write data in the flash memmory.
-void TIbeeProgrammer::writeMemory(unsigned long addr, byte buf[], int bufLen)
+/*---------------------------------------------------------------*/
+/*                      Write functions                          */
+/*---------------------------------------------------------------*/
+void TIbeeProgrammer::writeBytes(unsigned long addr, byte buf[], int bufLen)
 {
   unsigned char instr[3];
 
@@ -216,29 +208,6 @@ void TIbeeProgrammer::writeMemory(unsigned long addr, byte buf[], int bufLen)
     sendInstruction(SEND_DEBUG_INSTR_1, instr, 1);
 
   }
-
-}
-
-
-
-void TIbeeProgrammer::writeMemory(unsigned long addr, unsigned int data)
-{
-  unsigned char instr[3];
-
-  // MOV DPTR, address
-  instr[0] = 0x90;
-  instr[1] = highByte(addr);
-  instr[2] = lowByte(addr);
-  sendInstruction(SEND_DEBUG_INSTR_3, instr, 3);
-
-  // MOV A, values[i]
-  instr[0] = 0x74;
-  instr[1] = data;
-  sendInstruction(SEND_DEBUG_INSTR_2, instr, 2);
-
-  // MOV @DPTR, A
-  instr[0] = 0xF0;
-  sendInstruction(SEND_DEBUG_INSTR_1, instr, 1);
 }
 
 /*---------------------------------------------------------------*/

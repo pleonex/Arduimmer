@@ -151,12 +151,7 @@ byte PicProgrammer::readNextByte() {
 /*---------------------------------------------------------------*/
 /*                      Write functions                          */
 /*---------------------------------------------------------------*/
-void PicProgrammer::writeMemory(unsigned long addr, unsigned int data) {
-  setTblPtr(addr);
-  sendInstruction(InstTblWrite, data);
-}
-
-void PicProgrammer::writeMemory(unsigned long addr, byte buf[], int bufLen) {
+void PicProgrammer::writeBytes(unsigned long addr, byte buf[], int bufLen) {
   // Configure Device for Writes
   sendInstruction(InstCore, 0x8EA6);  // BSF  EECON1, EEPGD
   if (bufLen > 1)
@@ -171,7 +166,7 @@ void PicProgrammer::writeMemory(unsigned long addr, byte buf[], int bufLen) {
   int i;
   for (i = 0; i < (bufLen - 2); i += 2) {
     unsigned int data = (buf[i+1] << 8) | buf[i];
-    writeMemoryIncr(data);
+    sendInstruction(InstTblWritePostIncr, data);
   }
 
   // Write last two bytes and start programming
@@ -183,7 +178,7 @@ void PicProgrammer::writeMemory(unsigned long addr, byte buf[], int bufLen) {
   else
     data = buf[i] << 8;
 
-  writeMemoryStartProgramming(data);
+  sendInstruction(InstTblWriteProg, data);
 
   sendBits(0, 3);
   digitalWrite(dataPin, LOW);
@@ -194,12 +189,9 @@ void PicProgrammer::writeMemory(unsigned long addr, byte buf[], int bufLen) {
   sendBits(0, 16);
 }
 
-void PicProgrammer::writeMemoryIncr(unsigned int data) {
-  sendInstruction(InstTblWritePostIncr, data);
-}
-
-void PicProgrammer::writeMemoryStartProgramming(unsigned int data) {
-  sendInstruction(InstTblWriteProg, data);
+void PicProgrammer::writeDirect(unsigned long addr, unsigned int data) {
+  setTblPtr(addr);
+  sendInstruction(InstTblWrite, data);
 }
 
 /*---------------------------------------------------------------*/
@@ -208,11 +200,9 @@ void PicProgrammer::writeMemoryStartProgramming(unsigned int data) {
 bool PicProgrammer::erase() {
   const unsigned int mode = 0x3F8Fu; // CHIP ERASE
 
-  enterProgrammingMode();
-
   // 1º Write mode into register
-  writeMemory(0x3C0005, (highByte(mode) << 8) | highByte(mode));
-  writeMemory(0x3C0004, (lowByte(mode) << 8) | lowByte(mode));
+  writeDirect(0x3C0005, (highByte(mode) << 8) | highByte(mode));
+  writeDirect(0x3C0004, (lowByte(mode) << 8) | lowByte(mode));
 
   // 2º Start erasing
     // 2.1 Send NOP
@@ -227,7 +217,6 @@ bool PicProgrammer::erase() {
     // 2.4 Send null payload
   sendBits(0, 16);
 
-  exitProgrammingMode();
   return true;
 }
 

@@ -59,8 +59,7 @@ class PicProgrammer : public IcspProgrammer
     virtual bool isSupported(unsigned int deviceId);
 
     virtual bool erase();
-    virtual void writeMemory(unsigned long addr, byte buf[], int bufLen);
-    virtual void writeMemory(unsigned long addr, unsigned int data);
+    virtual void writeBytes(unsigned long addr, byte buf[], int bufLen);
     virtual void readBytes(unsigned long addr, byte buf[], int bufLen);
 
   protected:
@@ -74,10 +73,8 @@ class PicProgrammer : public IcspProgrammer
     byte sendInstruction(byte instr, unsigned int payload);
     void setTblPtr(unsigned long addr);
 
-    void writeMemoryIncr(unsigned int data);
-    void writeMemoryStartProgramming(unsigned int data);
-
     byte readNextByte();
+    void writeDirect(unsigned long addr, unsigned int data);
 };
 
 #endif

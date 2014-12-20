@@ -37,8 +37,11 @@ class IcspProgrammer
     virtual bool isSupported(unsigned int deviceId) = 0;
 
     virtual bool erase() = 0;
-    virtual void writeMemory(unsigned long addr, byte buf[], int bufLen) = 0;
-    virtual void writeMemory(unsigned long addr, unsigned int data) = 0;
+
+    virtual void writeBytes(unsigned long addr, byte buf[], int bufLen) = 0;
+    void writeByte(unsigned long addr, byte data);
+    void writeUInt16(unsigned long addr, unsigned short data);
+    void writeUInt32(unsigned long addr, unsigned int data);
 
     virtual void readBytes(unsigned long addr, byte buf[], int bufLen) = 0;
     byte readByte(unsigned long addr);

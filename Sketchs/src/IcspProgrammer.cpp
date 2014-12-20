@@ -58,6 +58,10 @@ void IcspProgrammer::sendBits(unsigned int data, int n) {
   }
 }
 
+/*---------------------------------------------------------------*/
+/*                       Read functions                          */
+/*---------------------------------------------------------------*/
+
 /**
  * Read a byte from the memory.
  */
@@ -93,4 +97,43 @@ unsigned int IcspProgrammer::readUInt32(unsigned long addr) {
   } else {
     return (buffer[3] << 24) | (buffer[2] << 16) | (buffer[1] << 8) | buffer[0];
   }
+}
+
+/*---------------------------------------------------------------*/
+/*                      Write functions                          */
+/*---------------------------------------------------------------*/
+
+void IcspProgrammer::writeByte(unsigned long addr, byte data) {
+  byte buffer[1] = { data };
+  writeBytes(addr, buffer, 1);
+}
+
+void IcspProgrammer::writeUInt16(unsigned long addr, unsigned short data) {
+  byte buffer[2];
+  if (isMsb) {
+    buffer[0] = data >> 8;
+    buffer[1] = data & 0xFF;
+  } else {
+    buffer[1] = data >> 8;
+    buffer[0] = data & 0xFF;
+  }
+
+  writeBytes(addr, buffer, 2);
+}
+
+void IcspProgrammer::writeUInt32(unsigned long addr, unsigned int data) {
+  byte buffer[4];
+  if (isMsb) {
+    buffer[0] = (data >> 24) & 0xFF;
+    buffer[1] = (data >> 16) & 0xFF;
+    buffer[2] = (data >> 8) & 0xFF;
+    buffer[3] = data & 0xFF;
+  } else {
+    buffer[3] = (data >> 24) & 0xFF;
+    buffer[2] = (data >> 16) & 0xFF;
+    buffer[1] = (data >> 8) & 0xFF;
+    buffer[0] = data & 0xFF;
+  }
+
+  writeBytes(addr, buffer, 2);
 }
