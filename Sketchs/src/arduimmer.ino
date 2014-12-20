@@ -116,7 +116,7 @@ void program() {
 
   // Write and verify the program
   while (serialBuffer->dataAvailable() && !error) {
-    error = writeNextBlock(programmer, serialBuffer);
+    error = !writeNextBlock(programmer, serialBuffer);
     if (error)
       Serial.println(ERROR_DATA_MISMATCH);
   }
@@ -166,16 +166,15 @@ bool writeNextBlock(IcspProgrammer* programmer, SerialBuffer* serialBuffer) {
   int bufferLength = serialBuffer->nextData(&address, bufferWrite);
 
   // Write it
-  programmer->writeMemory(address, bufferWrite, bufferLength);
+  programmer->writeBytes(address, bufferWrite, bufferLength);
 
   // Read it again
   programmer->readBytes(address, bufferRead, bufferLength);
 
   // Verify it
-  bool error = false;
-  for (int i = 0; i < bufferLength && !error; i++)
-    if (bufferWrite[i] != bufferRead[i])
-      error = true;
+  bool success = true;
+  for (int i = 0; i < bufferLength && success; i++)
+    success = (bufferWrite[i] == bufferRead[i])
 
-  return error;
+  return success;
 }
