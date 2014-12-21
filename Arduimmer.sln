@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arduimmer", "Arduimmer\Arduimmer.csproj", "{942DF213-7FF2-4B07-ADBE-AF57AF50E1FB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arduimmer.Tests", "Arduimmer.Tests\Arduimmer.Tests.csproj", "{9EC6A965-83F4-418B-A809-417DB9731870}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -13,6 +15,10 @@ Global
 		{942DF213-7FF2-4B07-ADBE-AF57AF50E1FB}.Debug|x86.Build.0 = Debug|x86
 		{942DF213-7FF2-4B07-ADBE-AF57AF50E1FB}.Release|x86.ActiveCfg = Release|x86
 		{942DF213-7FF2-4B07-ADBE-AF57AF50E1FB}.Release|x86.Build.0 = Release|x86
+		{9EC6A965-83F4-418B-A809-417DB9731870}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{9EC6A965-83F4-418B-A809-417DB9731870}.Debug|x86.Build.0 = Debug|Any CPU
+		{9EC6A965-83F4-418B-A809-417DB9731870}.Release|x86.ActiveCfg = Release|Any CPU
+		{9EC6A965-83F4-418B-A809-417DB9731870}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = Arduimmer\Arduimmer.csproj
