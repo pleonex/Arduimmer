@@ -85,8 +85,8 @@ namespace Arduimmer.Tests
 		[Test]
 		public void NotSupportExtendedLinearAddr()
 		{
-			const string command = ":00000004FC";
-			Assert.Throws<NotSupportedException>(() => HexRecordParser.FromString(command));
+			const string command = ":02000004028078";
+			Assert.AreEqual(0x02800000, HexRecordParser.FromString(command).Address);
 		}
 
 		[Test]
@@ -107,7 +107,7 @@ namespace Arduimmer.Tests
 		public void InvalidChecksum()
 		{
 			const string command = ":0200000011AB";
-			Assert.Throws<FormatException>(() => HexRecordParser.FromString(command));
+			Assert.IsNull(HexRecordParser.FromString(command));
 		}
 	}
 }

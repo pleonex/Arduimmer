@@ -31,8 +31,7 @@ namespace Arduimmer
 
 		public static HexRecord FromString(string str)
 		{
-			// Check if it's a comment or something else (RECORD MARK)
-			if (str[0] != Mark)
+			if (!ValidateCommand(str))
 				return null;
 
 			var record = new HexRecord();
@@ -45,7 +44,8 @@ namespace Arduimmer
 
 			// Get type (RECTYPE)
 			record.RecordType = (RecordType)Convert.ToByte(str.Substring(7, 2), 16);
-			if (record.RecordType != RecordType.Data && record.RecordType != RecordType.Eof)
+			if (record.RecordType != RecordType.Data && record.RecordType != RecordType.Eof &&
+				record.RecordType != RecordType.ExtendedLinearAddr)
 				throw new NotSupportedException();
 
 			// Get data
@@ -53,10 +53,24 @@ namespace Arduimmer
 			for (int i = 0; i < length; i++)
 				record.Data[i] = Convert.ToByte(str.Substring(9 + i * 2, 2), 16);
 
-			if (!ValidateChecksum(str))
-				throw new FormatException("Invalid checksum");
+			// If it's extended linear address, update address
+			if (record.RecordType == RecordType.ExtendedLinearAddr)
+				record.Address = (uint)((record.Data[0] << 24) | (record.Data[1] << 16));
 
 			return record;
+		}
+
+		static bool ValidateCommand(string command)
+		{
+			// Check if it's a comment or something else (RECORD MARK)
+			if (command[0] != Mark)
+				return false;
+
+			// Validate checksum
+			if (!ValidateChecksum(command))
+				return false;
+
+			return true;
 		}
 
 		static bool ValidateChecksum(string command)
