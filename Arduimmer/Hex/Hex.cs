@@ -25,20 +25,15 @@ namespace Arduimmer
 {
 	public class Hex
 	{
-		readonly List<HexRecord> records;
+		readonly HexRecord[] records;
 
-		public Hex()
+		public Hex(HexRecord[] records)
 		{
-			records = new List<HexRecord>();
+			this.records = records;
 		}
 
 		public ReadOnlyCollection<HexRecord> Records {
 			get { return new ReadOnlyCollection<HexRecord>(records); }
-		}
-
-		public void AddRecord(HexRecord record)
-		{
-			records.Add(record);
 		}
 	}
 }

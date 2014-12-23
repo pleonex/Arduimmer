@@ -20,6 +20,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace Arduimmer
@@ -33,31 +34,21 @@ namespace Arduimmer
 
 		public static Hex FromText(string hexText)
 		{
-			var hex = new Hex();
+			var entries = GetEntries(hexText);
+			HexRecord[] records = entries
+				.Select(entry => HexRecordParser.FromString(entry))
+				.Where(record => record != null)
+				.ToArray();
+				
+			return new Hex(records);
+		}
 
+		static string[] GetEntries(string hexText)
+		{
 			// Split lines
 			hexText = hexText.Replace("\r", "");
 			char[] separator = { '\n' };
-			string[] lines = hexText.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-
-			uint lba = 0;
-			foreach (string line in lines) {
-				if (string.IsNullOrEmpty(line) || line[0] != HexRecordParser.Mark)
-					continue;
-
-				HexRecord record = HexRecordParser.FromString(line);
-				if (record.RecordType == RecordType.Data) {
-					record.Address = (lba + record.Address) % 0xFFFFFFFF;
-				} else if (record.RecordType == RecordType.ExtendedLinearAddr) {
-					lba = (uint)((record.Data[0] << 24) | (record.Data[1] << 16));
-					continue;
-				} else if (record.RecordType != RecordType.Eof)
-					throw new FormatException("The HEX file contains unknown fields.");
-
-				hex.AddRecord(record);
-			}
-
-			return hex;
+			return hexText.Split(separator, StringSplitOptions.RemoveEmptyEntries);
 		}
 	}
 }
