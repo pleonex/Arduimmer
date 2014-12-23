@@ -61,7 +61,7 @@ namespace Arduimmer
 
 		private static void CodeDevice(string hexPath)
 		{
-			Hex code = Hex.FromFile(hexPath);
+			Hex code = HexParser.FromFile(hexPath);
 			PicProgrammer programmer = PicProgrammer.SearchArduino();
 			if (programmer == null) {
 				Console.WriteLine("ERROR Can not find Arduino device.");
