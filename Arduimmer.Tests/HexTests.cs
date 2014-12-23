@@ -23,10 +23,79 @@ using System;
 
 namespace Arduimmer.Tests
 {
-	[TestFixture()]
+	[TestFixture]
 	public class HexTests
 	{
+		[Test]
+		public void Mark()
+		{
+			Assert.AreEqual(':', HexRecord.Mark);
+		}
 
+		[Test]
+		public void IncorrectMark()
+		{
+			Assert.IsNull(HexRecord.FromAsciiString("#02342"));
+		}
+
+		[Test]
+		public void CorrectLength()
+		{
+			Assert.AreEqual(2, HexRecord.FromAsciiString(":021111003333").Data.Length);
+		}
+
+		[Test]
+		public void CorrectAddress()
+		{
+			Assert.AreEqual(0xCAFE, HexRecord.FromAsciiString(":00CAFE00").Address);
+		}
+
+		[Test]
+		public void SupportDataType()
+		{
+			var expected = new byte[] { 0xCA, 0xFE, 0xDA, 0xDA };
+			var expectedStr = BitConverter.ToString(expected).Replace("-", "");
+			var command = ":" + expected.Length.ToString("X2") + "CACA00" + expectedStr;
+			var record = HexRecord.FromAsciiString(command);
+
+			Assert.AreEqual(RecordType.Data, record.RecordType);
+			Assert.AreEqual(expected, record.Data);
+		}
+
+		[Test]
+		public void SupportEOF()
+		{
+			var record = HexRecord.FromAsciiString(":00000001FF");
+			Assert.AreEqual(RecordType.Eof, record.RecordType);
+		}
+
+		[Test]
+		public void NotSupportExtendedSegAddr()
+		{
+			const string command = ":00000002";
+			Assert.Throws<NotSupportedException>(() => HexRecord.FromAsciiString(command));
+		}
+
+		[Test]
+		public void NotSupportStartSegAddr()
+		{
+			const string command = ":00000003";
+			Assert.Throws<NotSupportedException>(() => HexRecord.FromAsciiString(command));
+		}
+
+		[Test]
+		public void NotSupportExtendedLinearAddr()
+		{
+			const string command = ":00000004";
+			Assert.Throws<NotSupportedException>(() => HexRecord.FromAsciiString(command));
+		}
+
+		[Test]
+		public void NotSupportStartLinearAddr()
+		{
+			const string command = ":00000005";
+			Assert.Throws<NotSupportedException>(() => HexRecord.FromAsciiString(command));
+		}
 	}
 }
 
