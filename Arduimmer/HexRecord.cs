@@ -18,8 +18,6 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using System;
-
 namespace Arduimmer
 {
 	public enum RecordType {
@@ -33,10 +31,6 @@ namespace Arduimmer
 
 	public class HexRecord
 	{
-		public static char Mark {
-			get { return ':'; }
-		}
-
 		public uint Address {
 			get;
 			set;
@@ -50,35 +44,6 @@ namespace Arduimmer
 		public byte[] Data {
 			get;
 			set;
-		}
-
-		public static HexRecord FromAsciiString(string str)
-		{
-			// Check if it's a comment or something else (RECORD MARK)
-			if (str[0] != Mark)
-				return null;
-
-			var record = new HexRecord();
-
-			// Get record length (RECLEN)
-			byte length = Convert.ToByte(str.Substring(1, 2), 16);
-
-			// Get data address (LOAD OFFSET)
-			record.Address = Convert.ToUInt16(str.Substring(3, 4), 16);
-
-			// Get type (RECTYPE)
-			record.RecordType = (RecordType)Convert.ToByte(str.Substring(7, 2), 16);
-			if (record.RecordType != RecordType.Data && record.RecordType != RecordType.Eof)
-				throw new NotSupportedException();
-
-			// Get data
-			record.Data = new byte[length];
-			for (int i = 0; i < length; i++)
-				record.Data[i] = Convert.ToByte(str.Substring(9 + i * 2, 2), 16);
-
-			// TODO: Check shecksum
-
-			return record;
 		}
 	}
 }

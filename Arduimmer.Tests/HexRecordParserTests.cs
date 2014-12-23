@@ -24,30 +24,30 @@ using System;
 namespace Arduimmer.Tests
 {
 	[TestFixture]
-	public class HexTests
+	public class HexRecordParserTests
 	{
 		[Test]
 		public void Mark()
 		{
-			Assert.AreEqual(':', HexRecord.Mark);
+			Assert.AreEqual(':', HexRecordParser.Mark);
 		}
 
 		[Test]
 		public void IncorrectMark()
 		{
-			Assert.IsNull(HexRecord.FromAsciiString("#02342"));
+			Assert.IsNull(HexRecordParser.FromString("#02342"));
 		}
 
 		[Test]
 		public void CorrectLength()
 		{
-			Assert.AreEqual(2, HexRecord.FromAsciiString(":021111003333").Data.Length);
+			Assert.AreEqual(2, HexRecordParser.FromString(":021111003333").Data.Length);
 		}
 
 		[Test]
 		public void CorrectAddress()
 		{
-			Assert.AreEqual(0xCAFE, HexRecord.FromAsciiString(":00CAFE00").Address);
+			Assert.AreEqual(0xCAFE, HexRecordParser.FromString(":00CAFE00").Address);
 		}
 
 		[Test]
@@ -56,7 +56,7 @@ namespace Arduimmer.Tests
 			var expected = new byte[] { 0xCA, 0xFE, 0xDA, 0xDA };
 			var expectedStr = BitConverter.ToString(expected).Replace("-", "");
 			var command = ":" + expected.Length.ToString("X2") + "CACA00" + expectedStr;
-			var record = HexRecord.FromAsciiString(command);
+			var record = HexRecordParser.FromString(command);
 
 			Assert.AreEqual(RecordType.Data, record.RecordType);
 			Assert.AreEqual(expected, record.Data);
@@ -65,7 +65,7 @@ namespace Arduimmer.Tests
 		[Test]
 		public void SupportEOF()
 		{
-			var record = HexRecord.FromAsciiString(":00000001FF");
+			var record = HexRecordParser.FromString(":00000001FF");
 			Assert.AreEqual(RecordType.Eof, record.RecordType);
 		}
 
@@ -73,28 +73,28 @@ namespace Arduimmer.Tests
 		public void NotSupportExtendedSegAddr()
 		{
 			const string command = ":00000002";
-			Assert.Throws<NotSupportedException>(() => HexRecord.FromAsciiString(command));
+			Assert.Throws<NotSupportedException>(() => HexRecordParser.FromString(command));
 		}
 
 		[Test]
 		public void NotSupportStartSegAddr()
 		{
 			const string command = ":00000003";
-			Assert.Throws<NotSupportedException>(() => HexRecord.FromAsciiString(command));
+			Assert.Throws<NotSupportedException>(() => HexRecordParser.FromString(command));
 		}
 
 		[Test]
 		public void NotSupportExtendedLinearAddr()
 		{
 			const string command = ":00000004";
-			Assert.Throws<NotSupportedException>(() => HexRecord.FromAsciiString(command));
+			Assert.Throws<NotSupportedException>(() => HexRecordParser.FromString(command));
 		}
 
 		[Test]
 		public void NotSupportStartLinearAddr()
 		{
 			const string command = ":00000005";
-			Assert.Throws<NotSupportedException>(() => HexRecord.FromAsciiString(command));
+			Assert.Throws<NotSupportedException>(() => HexRecordParser.FromString(command));
 		}
 	}
 }
