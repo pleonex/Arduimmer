@@ -19,6 +19,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
+using System.Linq;
 
 namespace Arduimmer
 {
@@ -52,9 +53,20 @@ namespace Arduimmer
 			for (int i = 0; i < length; i++)
 				record.Data[i] = Convert.ToByte(str.Substring(9 + i * 2, 2), 16);
 
-			// TODO: Check shecksum
+			if (!ValidateChecksum(str))
+				throw new FormatException("Invalid checksum");
 
 			return record;
+		}
+
+		static bool ValidateChecksum(string command)
+		{
+			string data = command.Substring(1);
+
+			// The sum of all bytes must be 0 (includye checksum)
+			return (byte)Enumerable.Range(0, data.Length / 2)
+				.Select(i => data.Substring(i * 2, 2))
+				.Sum(b => Convert.ToSByte(b, 16)) == 0;
 		}
 	}
 }
