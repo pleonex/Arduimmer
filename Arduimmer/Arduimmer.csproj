@@ -43,6 +43,7 @@
     <Compile Include="SerialSocket.cs" />
     <Compile Include="Hex\HexRecordParser.cs" />
     <Compile Include="Hex\HexParser.cs" />
+    <Compile Include="ProgrammerFactory.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

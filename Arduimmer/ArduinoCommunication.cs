@@ -25,186 +25,128 @@ using System.Threading;
 
 namespace Arduimmer
 {
-	public class ArduinoCommunication : SerialSocket
+	public class ArduinoCommunication
 	{
-		public ArduinoCommunication(string portName)
-			: base(portName)
+		readonly SerialSocket socket;
+
+		internal ArduinoCommunication(string portName)
 		{
+			socket = new SerialSocket(portName);
+			socket.Open();
 		}
 
-		public static ArduinoCommunication SearchArduino()
+		public static string SearchArduinoPortName()
 		{
-			// Gets a list of port names
-			string[] portNames = null;
-			switch (Environment.OSVersion.Platform) {
-			case PlatformID.Win32NT:
-			case PlatformID.Win32S:
-			case PlatformID.WinCE:			// Who knows...?
-			case PlatformID.Win32Windows:
-				portNames = SerialPort.GetPortNames(); 
-				break;
-
-			case PlatformID.Unix:
-				portNames = System.IO.Directory.GetFiles("/dev", "ttyACM*");
-				break;
-
-			default:
-				throw new NotSupportedException("OS not supported");
-			}
-
 			// Tries to do a ping in each port until it receives a response
-			foreach (string portName in portNames) {
-				var arduino = new ArduinoCommunication(portName);
-				try {
-					arduino.Open();
-					bool isArduino = arduino.Ping();
-					arduino.Close();
+			foreach (string portName in GetPortNames()) {
+				SerialSocket socket = null;
+				bool isArduino;
 
-					if (isArduino)
-						return arduino;
-				} catch {
+				try {
+					socket = new SerialSocket(portName);
+					socket.Open();
+					isArduino = Ping(socket);
+				} finally {
+					if (socket != null)
+						socket.Close();
 				}
+
+				if (isArduino)
+					return portName;
 			}
 
 			return null;
 		}
 
-		public bool Ping()
+		public static bool Ping(SerialSocket socket)
 		{
 			try {
-				this.Write("Hey!");
-				return this.ReadLine() == "Yes?";
+				socket.Write("Hey!");
+				return socket.ReadLine() == "Yes?";
 			} catch {
 				return false;
 			}
 		}
 
-		public ushort GetDeviceId()
+		static string[] GetPortNames()
 		{
-			this.Write("Dev?");
-			return Convert.ToUInt16(this.ReadLine(), 16);
+			switch (Environment.OSVersion.Platform) {
+			case PlatformID.Win32NT:
+			case PlatformID.Win32S:
+			case PlatformID.WinCE:			// Who knows...?
+			case PlatformID.Win32Windows:
+				return SerialPort.GetPortNames(); 
+
+			case PlatformID.Unix:
+				return Directory.GetFiles("/dev", "ttyACM*");
+
+			default:
+				throw new NotSupportedException("OS not supported");
+			}
 		}
 
-		public void CodeDevice(Hex code)
+		public bool Ping()
 		{
-			Console.WriteLine("Programming sequence started");
-
-			// 1º Erase chip
-			this.EraseChip();
-
-			// 2º Send & verify code
-			Console.WriteLine("\t* Starting to write code");
-			this.WriteCode(code);
-			Console.WriteLine("\t* Code written correctly");
-
-			// 3º Send & verify configuration bits
-			Console.WriteLine("\t* Starting to write conf bits");
-			this.WriteConfBits(code);
-			Console.WriteLine("\t* Conf bits written correctly");
-
-			Console.WriteLine("Device programmed correctly ;)");
+			return Ping(socket);
 		}
 
-		private void EraseChip()
+		public void Close()
 		{
-			// Check if Arduino is ready
-			if (!this.Ping())
-				throw new IOException("ERROR Can not communicate with Arduino!");
-
-			// Send Erase Chip command and wait for response
-			this.Write("Era!");
-			Thread.Sleep(1000);
-			Console.WriteLine("\t* {0}", this.ReadLine());
+			socket.Close();
 		}
 
-		private void WriteCode(Hex code)
+		public void WriteCode(string deviceName, int[] ports, Hex code)
 		{
 			// Sends Write Code command
-			this.Write("Cod!");
+			socket.Write("Pro!");
 
-			string info = string.Empty;
-			uint nextAddress = 0xFFFFFFFF;
-			foreach (HexRecord record in code.Records) {
-				// Initialize next address
-				if (nextAddress == 0xFFFFFFFF)
-					nextAddress = record.Address;
+			// Sends device name
+			socket.Write(deviceName, 10);
 
-				if (record.RecordType == RecordType.Eof || (record.Address & 0xFF0000) != 0x000000) {
-					// If there is not more data or the data is not in the code memory...
-					//  sends stop command (null address)
-					this.Write((uint)0xFFFFFFFF);
-				} else {
-					if (nextAddress != record.Address) {
-						// If the address is no contiguous, Arduino must finish the current
-						//  programming sequence and start another one
-						this.Write((uint)0xFFFFFFFF);
+			// Sends the ports
+			socket.Write((byte)ports.Length);
+			foreach (int p in ports)
+				socket.Write((byte)p);
 
-						Thread.Sleep(100);	// Waits for Arduino
+			// Sends the code
+			SendCode(code);
 
-						// Checks if Arduino wants to show info
-						if (this.DataAvailable > 0) {
-							info = this.ReadAll();
-							Console.Write(info);
-							if (info.Contains("ERROR"))
-								throw new IOException();
-						}
+			// Wait the result
+			bool finished = false;
+			while (!finished) {
+				Thread.Sleep(100);
+				if (socket.DataAvailable == 0)
+					continue;
 
-						// Let's start again
-						this.Write("Cod!");
-						nextAddress = record.Address;
-					} 
+				string result = socket.ReadLine();
+				finished = (result == "Done!");
 
-					// Writes code into the buffer
-					this.Write((uint)record.Address);
-					this.Write((byte)record.Data.Length);
-					this.Write(record.Data);
-					nextAddress += (uint)record.Data.Length;
-				}
-
-				Thread.Sleep(100);	// Waits for Arduino
-
-				// Checks if Arduino wants to show info
-				if (this.DataAvailable > 0) {
-					info = this.ReadAll();
-					Console.Write(info);
-					if (info.Contains("ERROR"))
-						throw new IOException();
-				}
+				// TODO: Check errors
 			}
 		}
 
-		private void WriteConfBits(Hex code)
+		void SendCode(Hex code)
 		{
-			// Sends Write Configuration Bits command
-			this.Write("Cnf!");
+			var dataRecords = code.DataRecords;
 
-			string info = string.Empty;
-			foreach (HexRecord record in code.Records) {
-				if (record.RecordType == RecordType.Eof) {
-					// If there is not more data, sends null address
-					this.Write((uint)0xFFFFFFFF);
-				} else if ((record.Address & 0x00FF0000) == 0x00300000) {
-					// Only if the data is in the Configuration bits region... 
-					//  writes configuration bits into the buffer
-					this.Write((uint)record.Address);
-					this.Write((byte)record.Data.Length);
-					this.Write(record.Data);
-				} else {
-					// Else continue checking records
-					continue;
-				}
+			// Sends number of records
+			socket.Write((byte)dataRecords.Count);
 
-				Thread.Sleep(100);	// Waits for Arduino
+			// Sends records
+			foreach (HexRecord record in dataRecords)
+				SendDataRecord(record);
+		}
 
-				// Checks if Arduino wants to show info
-				if (this.DataAvailable > 0) {
-					info = this.ReadAll();
-					Console.Write(info);
-					if (info.Contains("ERROR"))
-						throw new IOException();
-				}
-			}
+		void SendDataRecord(HexRecord record)
+		{
+			// Sends address
+			socket.Write(record.Address);
+
+			// Sends data length
+			socket.Write((uint)record.Data.Length);
+
+			// Sends data
+			socket.Write(record.Data);
 		}
 	}
 }
-

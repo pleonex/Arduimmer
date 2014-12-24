@@ -77,6 +77,11 @@ namespace Arduimmer
 			port.Write(s);
 		}
 
+		public void Write(string s, int len)
+		{
+			port.Write(s.PadRight(len, '\0'));
+		}
+
 		public void Write(byte v)
 		{
 			byte[] data = { v };
