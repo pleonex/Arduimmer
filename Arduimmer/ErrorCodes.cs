@@ -22,12 +22,14 @@ using System;
 
 namespace Arduimmer
 {
-	public enum ErrorCodes
+	public enum ErrorCodes : byte
 	{
 		NoError = 0,
 		UnknownDevice = 1,
 		InvalidDevice = 2,
 		DataMismatch = 3,
+
+		DisconnectedDevice = 0xFF
 	}
 }
 
