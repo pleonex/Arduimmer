@@ -38,6 +38,7 @@
   <ItemGroup>
     <Compile Include="HexRecordParserTests.cs" />
     <Compile Include="HexParserTests.cs" />
+    <Compile Include="HexTests.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
