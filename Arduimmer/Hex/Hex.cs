@@ -66,7 +66,7 @@ namespace Arduimmer
 
 				// If the address are not contiguous, create data record and start again
 				if (address != startAddress + currentData.Count) {
-					dataRecords.Add(new HexRecord() { 
+					dataRecords.Add(new HexRecord { 
 						Address    = startAddress, 
 						Data       = currentData.ToArray(),
 						RecordType = RecordType.Data
@@ -82,7 +82,7 @@ namespace Arduimmer
 			}
 
 			// Create the record for the buffer
-			dataRecords.Add(new HexRecord() { 
+			dataRecords.Add(new HexRecord { 
 				Address    = startAddress, 
 				Data       = currentData.ToArray(),
 				RecordType = RecordType.Data
