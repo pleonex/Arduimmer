@@ -31,6 +31,7 @@ namespace Arduimmer
 
 		internal ArduinoCommunication(string portName)
 		{
+			Error = ErrorCodes.NoError;
 			socket = new SerialSocket(portName);
 			socket.Open();
 		}
@@ -85,6 +86,11 @@ namespace Arduimmer
 			}
 		}
 
+		public ErrorCodes Error {
+			get;
+			private set;
+		}
+
 		public bool Ping()
 		{
 			return Ping(socket);
@@ -97,6 +103,9 @@ namespace Arduimmer
 
 		public void WriteCode(string deviceName, int[] ports, Hex code)
 		{
+			// Clear errros
+			Error = ErrorCodes.NoError;
+
 			// Sends Write Code command
 			socket.Write("Pro!");
 
@@ -121,7 +130,8 @@ namespace Arduimmer
 				string result = socket.ReadLine();
 				finished = (result == "Done!");
 
-				// TODO: Check errors
+				if (result[0] == 'E')
+					Error = (ErrorCodes)Convert.ToByte(result.Substring(1));
 			}
 		}
 
