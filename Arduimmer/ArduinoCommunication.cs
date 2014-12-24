@@ -19,88 +19,191 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
+using System.IO;
 using System.IO.Ports;
+using System.Threading;
 
 namespace Arduimmer
 {
-	public class ArduinoCommunication
+	public class ArduinoCommunication : SerialSocket
 	{
-		const int      BaudRate     = 9600;
-		const Parity   ParityMode   = Parity.None;
-		const int      DataBits     = 8;
-		const StopBits StopBitsMode = StopBits.One;
-		const int      ReadTimeOut  = 1000;
-		const string   NewLine      = "\r\n";
-
-		readonly SerialPort port;
-
 		public ArduinoCommunication(string portName)
+			: base(portName)
 		{
-			PortName = portName;
-			port = new SerialPort { 
-				PortName    = portName, 
-				BaudRate    = BaudRate, 
-				Parity      = ParityMode, 
-				DataBits    = DataBits, 
-				StopBits    = StopBitsMode,
-				NewLine     = NewLine,
-				ReadTimeout = ReadTimeOut,
-				RtsEnable   = true,
-			    DtrEnable   = true
-			};
 		}
 
-		public string PortName {
-			get;
-			private set;
-		}
-
-		public int DataAvailable {
-			get { return port.BytesToRead; }
-		}
-
-		public void Open()
+		public static ArduinoCommunication SearchArduino()
 		{
-			port.Open();
+			// Gets a list of port names
+			string[] portNames = null;
+			switch (Environment.OSVersion.Platform) {
+			case PlatformID.Win32NT:
+			case PlatformID.Win32S:
+			case PlatformID.WinCE:			// Who knows...?
+			case PlatformID.Win32Windows:
+				portNames = SerialPort.GetPortNames(); 
+				break;
+
+			case PlatformID.Unix:
+				portNames = System.IO.Directory.GetFiles("/dev", "ttyACM*");
+				break;
+
+			default:
+				throw new NotSupportedException("OS not supported");
+			}
+
+			// Tries to do a ping in each port until it receives a response
+			foreach (string portName in portNames) {
+				var arduino = new ArduinoCommunication(portName);
+				try {
+					arduino.Open();
+					bool isArduino = arduino.Ping();
+					arduino.Close();
+
+					if (isArduino)
+						return arduino;
+				} catch {
+				}
+			}
+
+			return null;
 		}
 
-		public void Close()
+		public bool Ping()
 		{
-			if (port.BytesToRead > 0)
-				Console.WriteLine("Trash: {0}", port.ReadExisting());
-
-			port.Close();
+			try {
+				this.Write("Hey!");
+				return this.ReadLine() == "Yes?";
+			} catch {
+				return false;
+			}
 		}
 
-		public void Write(string s)
+		public ushort GetDeviceId()
 		{
-			port.Write(s);
+			this.Write("Dev?");
+			return Convert.ToUInt16(this.ReadLine(), 16);
 		}
 
-		public void Write(byte v)
+		public void CodeDevice(Hex code)
 		{
-			byte[] data = { v };
-			Write(BitConverter.ToString(data));
+			Console.WriteLine("Programming sequence started");
+
+			// 1º Erase chip
+			this.EraseChip();
+
+			// 2º Send & verify code
+			Console.WriteLine("\t* Starting to write code");
+			this.WriteCode(code);
+			Console.WriteLine("\t* Code written correctly");
+
+			// 3º Send & verify configuration bits
+			Console.WriteLine("\t* Starting to write conf bits");
+			this.WriteConfBits(code);
+			Console.WriteLine("\t* Conf bits written correctly");
+
+			Console.WriteLine("Device programmed correctly ;)");
 		}
 
-		public void Write(byte[] v)
+		private void EraseChip()
 		{
-			Write(BitConverter.ToString(v).Replace("-", ""));
+			// Check if Arduino is ready
+			if (!this.Ping())
+				throw new IOException("ERROR Can not communicate with Arduino!");
+
+			// Send Erase Chip command and wait for response
+			this.Write("Era!");
+			Thread.Sleep(1000);
+			Console.WriteLine("\t* {0}", this.ReadLine());
 		}
 
-		public void Write(uint v)
+		private void WriteCode(Hex code)
 		{
-			Write(BitConverter.GetBytes(v));
+			// Sends Write Code command
+			this.Write("Cod!");
+
+			string info = string.Empty;
+			uint nextAddress = 0xFFFFFFFF;
+			foreach (HexRecord record in code.Records) {
+				// Initialize next address
+				if (nextAddress == 0xFFFFFFFF)
+					nextAddress = record.Address;
+
+				if (record.RecordType == RecordType.Eof || (record.Address & 0xFF0000) != 0x000000) {
+					// If there is not more data or the data is not in the code memory...
+					//  sends stop command (null address)
+					this.Write((uint)0xFFFFFFFF);
+				} else {
+					if (nextAddress != record.Address) {
+						// If the address is no contiguous, Arduino must finish the current
+						//  programming sequence and start another one
+						this.Write((uint)0xFFFFFFFF);
+
+						Thread.Sleep(100);	// Waits for Arduino
+
+						// Checks if Arduino wants to show info
+						if (this.DataAvailable > 0) {
+							info = this.ReadAll();
+							Console.Write(info);
+							if (info.Contains("ERROR"))
+								throw new IOException();
+						}
+
+						// Let's start again
+						this.Write("Cod!");
+						nextAddress = record.Address;
+					} 
+
+					// Writes code into the buffer
+					this.Write((uint)record.Address);
+					this.Write((byte)record.Data.Length);
+					this.Write(record.Data);
+					nextAddress += (uint)record.Data.Length;
+				}
+
+				Thread.Sleep(100);	// Waits for Arduino
+
+				// Checks if Arduino wants to show info
+				if (this.DataAvailable > 0) {
+					info = this.ReadAll();
+					Console.Write(info);
+					if (info.Contains("ERROR"))
+						throw new IOException();
+				}
+			}
 		}
 
-		public string ReadLine()
+		private void WriteConfBits(Hex code)
 		{
-			return port.ReadLine();
-		}
+			// Sends Write Configuration Bits command
+			this.Write("Cnf!");
 
-		public string ReadAll()
-		{
-			return port.ReadExisting();
+			string info = string.Empty;
+			foreach (HexRecord record in code.Records) {
+				if (record.RecordType == RecordType.Eof) {
+					// If there is not more data, sends null address
+					this.Write((uint)0xFFFFFFFF);
+				} else if ((record.Address & 0x00FF0000) == 0x00300000) {
+					// Only if the data is in the Configuration bits region... 
+					//  writes configuration bits into the buffer
+					this.Write((uint)record.Address);
+					this.Write((byte)record.Data.Length);
+					this.Write(record.Data);
+				} else {
+					// Else continue checking records
+					continue;
+				}
+
+				Thread.Sleep(100);	// Waits for Arduino
+
+				// Checks if Arduino wants to show info
+				if (this.DataAvailable > 0) {
+					info = this.ReadAll();
+					Console.Write(info);
+					if (info.Contains("ERROR"))
+						throw new IOException();
+				}
+			}
 		}
 	}
 }
