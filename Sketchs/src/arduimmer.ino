@@ -89,9 +89,9 @@ void program() {
 
   // .. Get all the ports
   int ports[10];
-  int numPorts = Serial.read();
+  int numPorts = serialReceiveByte();
   for (int i = 0; i < numPorts; i++)
-    ports[i] = Serial.read();
+    ports[i] = serialReceiveByte();
 
   // Get program code from PC
   SerialBuffer* serialBuffer = new SerialBuffer();
@@ -152,6 +152,12 @@ void serialReceiveString(char buffer[], int len) {
   // Wait for all the data
   while (Serial.available() < len) ;
   Serial.readBytes(buffer, len);
+}
+
+byte serialReceiveByte() {
+  // Wait for it
+  while (Serial.available() < 1) ;
+  return Serial.read();
 }
 
 /**
