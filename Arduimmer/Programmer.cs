@@ -31,7 +31,7 @@ namespace Arduimmer
 
 		internal Programmer(string portName)
 		{
-			Error = ErrorCodes.NoError;
+			Error = ErrorCode.NoError;
 			socket = new SerialSocket(portName);
 			socket.Open();
 		}
@@ -86,7 +86,7 @@ namespace Arduimmer
 			}
 		}
 
-		public ErrorCodes Error {
+		public ErrorCode Error {
 			get;
 			private set;
 		}
@@ -104,7 +104,7 @@ namespace Arduimmer
 		public void WriteCode(string deviceName, int[] ports, Hex code)
 		{
 			// Clear errros
-			Error = ErrorCodes.NoError;
+			Error = ErrorCode.NoError;
 
 			// Sends Write Code command
 			socket.Write("Pro!");
@@ -131,7 +131,7 @@ namespace Arduimmer
 				finished = (result == "Done!");
 
 				if (result[0] == 'E')
-					Error = (ErrorCodes)Convert.ToByte(result.Substring(1));
+					Error = (ErrorCode)Convert.ToByte(result.Substring(1));
 			}
 		}
 

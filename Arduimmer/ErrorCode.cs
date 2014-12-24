@@ -1,5 +1,5 @@
 ﻿//
-//  ErrorCodes.cs
+//  ErrorCode.cs
 //
 //  Author:
 //       Benito Palacios Sánchez <benito356@gmail.com>
@@ -22,7 +22,7 @@ using System;
 
 namespace Arduimmer
 {
-	public enum ErrorCodes : byte
+	public enum ErrorCode : byte
 	{
 		NoError = 0,
 		UnknownDevice = 1,

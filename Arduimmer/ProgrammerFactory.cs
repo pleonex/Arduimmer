@@ -22,25 +22,25 @@ namespace Arduimmer
 {
 	public static class ProgrammerFactory
 	{
-		public static ErrorCodes ProgramPic(string portName, Hex code, string deviceName,
+		public static ErrorCode ProgramPic(string portName, Hex code, string deviceName,
 			int dataPin, int clockPin, int masterPin, int vppPin)
 		{
 			int[] ports = { dataPin, clockPin, masterPin, vppPin };
 			return ProgramDevice(portName, code, deviceName, ports);
 		}
 
-		public static ErrorCodes ProgramCC2530(string portName, Hex code, string deviceName,
+		public static ErrorCode ProgramCC2530(string portName, Hex code, string deviceName,
 			int dataPin, int clockPin, int resetPin)
 		{
 			int[] ports = { dataPin, clockPin, resetPin };
 			return ProgramDevice(portName, code, deviceName, ports);
 		}
 
-		static ErrorCodes ProgramDevice(string portName, Hex code, string deviceName, int[] ports)
+		static ErrorCode ProgramDevice(string portName, Hex code, string deviceName, int[] ports)
 		{
 			var programmer = new Programmer(portName);
 			if (!programmer.Ping())
-				return ErrorCodes.DisconnectedDevice;
+				return ErrorCode.DisconnectedDevice;
 				
 			programmer.WriteCode(deviceName, ports, code);
 
