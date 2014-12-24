@@ -39,7 +39,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Hex\Hex.cs" />
     <Compile Include="Hex\HexRecord.cs" />
-    <Compile Include="ArduinoCommunication.cs" />
+    <Compile Include="Programmer.cs" />
     <Compile Include="SerialSocket.cs" />
     <Compile Include="Hex\HexRecordParser.cs" />
     <Compile Include="Hex\HexParser.cs" />

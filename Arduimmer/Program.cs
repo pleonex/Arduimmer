@@ -60,7 +60,7 @@ namespace Arduimmer
 
 		static void CodeDevice(string hexPath)
 		{
-			var portName = ArduinoCommunication.SearchArduinoPortName();
+			var portName = Programmer.SearchArduinoPortName();
 			if (portName == null) {
 				Console.WriteLine("ERROR Can not find Arduino device.");
 				return;

@@ -1,5 +1,5 @@
 //
-//  ArduinoCommunication.cs
+//  Programmer.cs
 //
 //  Author:
 //       Benito Palacios Sánchez <benito356@gmail.com>
@@ -25,11 +25,11 @@ using System.Threading;
 
 namespace Arduimmer
 {
-	public class ArduinoCommunication
+	public class Programmer
 	{
 		readonly SerialSocket socket;
 
-		internal ArduinoCommunication(string portName)
+		internal Programmer(string portName)
 		{
 			Error = ErrorCodes.NoError;
 			socket = new SerialSocket(portName);
