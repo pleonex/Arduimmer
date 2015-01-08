@@ -296,7 +296,28 @@ void TIbeeProgrammer::burstBlock(byte buf[], int bufLen) {
 /*---------------------------------------------------------------*/
 void TIbeeProgrammer::readBlock(unsigned long addr, byte buffer[], int bufLen)
 {
-  // TODO
+  byte instr[3];
+  unsigned short xdata_addr = (0x8000 + addr);
+  byte bank = 0;
+
+  // 1. Map flash memory bank to XDATA address 0x8000 - 0xFFFF
+  writeByteXDATA(DUP_MEMCTR, bank);
+
+  // 2. Move data pointer to XDATA address (MOV DPTR, xdata_addr)
+  instr[0] = 0x90;
+  instr[1] = highByte(xdata_addr);
+  instr[2] = lowByte(xdata_addr);
+  sendInstruction(CMD_DEBUG_INSTR_3, instr, 3);
+
+  for (int i = 0; i < bufLen; i++) {
+      // 3. Move value pointed to by DPTR to accumulator (MOVX A, @DPTR)
+      instr[0]  = 0xE0;
+      buffer[i] = sendInstruction(CMD_DEBUG_INSTR_1, instr, 1);
+
+      // 4. Increment data pointer (INC DPTR)
+      instr[0] = 0xA3;
+      sendInstruction(CMD_DEBUG_INSTR_1, instr, 1);
+  }
 }
 
 byte TIbeeProgrammer::readByteXDATA(unsigned long addr) {

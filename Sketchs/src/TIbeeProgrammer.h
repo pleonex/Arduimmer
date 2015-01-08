@@ -41,6 +41,7 @@
 #define DUP_DMA0CFGL  0x70D4  // Low byte, DMA config ch. 0
 #define DUP_DMA0CFGH  0x70D5  // High byte, DMA config ch. 0
 #define DUP_DMAARM    0x70D6  // DMA arming register
+#define DUP_MEMCTR    0x70C7  // Flash bank xdata mapping
 #define DUP_CLKCONSTA 0x709E  // Sys clock status
 #define DUP_CLKCONCMD 0x70C6  // Sys clock configuration
 
