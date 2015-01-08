@@ -110,9 +110,7 @@ void TIbeeProgrammer::initDMA() {
   // Enable DMA (Disable DMA_PAUSE bit in debug configuration)
   byte debug_config = 0x22;
 
-  sendBits(CMD_WR_CONFIG, 8);
-  sendBits(debug_config, 8);
-  receiveBits(8);
+  sendInstruction(CMD_WR_CONFIG, &debug_config, 1);
 }
 
 /*---------------------------------------------------------------*/
@@ -181,7 +179,55 @@ void TIbeeProgrammer::writeBlock(unsigned long addr, byte buf[], int bufLen)
     enableDMA = true;
   }
 
-  // TODO
+  // 0. Create DMA descriptors
+  // ... Debug Interface -> Buffer
+  byte dma_desc_0[8] = {
+      highByte(DUP_DBGDATA),    // src[15:8]
+      lowByte(DUP_DBGDATA),     // src[7:0]
+      highByte(ADDR_BUF0),      // dest[15:8]
+      lowByte(ADDR_BUF0),       // dest[7:0]
+      highByte(bufLen),         // len[12:8]
+      lowByte(bufLen),          // len[7:0]
+      31,                       // trigger: DBG_BW
+      0x11                      // increment destination
+  };
+
+  // ... Buffer -> Flash controller
+  byte dma_desc_1[8] = {
+      highByte(ADDR_BUF0),      // src[15:8]
+      lowByte(ADDR_BUF0),       // src[7:0]
+      highByte(DUP_FWDATA),     // dest[15:8]
+      lowByte(DUP_FWDATA),      // dest[7:0]
+      highByte(bufLen),         // len[12:8]
+      lowByte(bufLen),          // len[7:0]
+      18,                       // trigger: FLASH
+      0x42                      // increment source
+  };
+
+  // 1. Write the 2 DMA descriptors to RAM
+  writeBlockXDATA(ADDR_DMA_DESC_0, dma_desc_0, 8);
+  writeBlockXDATA(ADDR_DMA_DESC_1, dma_desc_1, 8);
+
+  // 2. Set DMA controller pointer to the DAM descriptors
+  writeByteXDATA(DUP_DMA0CFGH, highByte(ADDR_DMA_DESC_0));
+  writeByteXDATA(DUP_DMA0CFGL, lowByte(ADDR_DMA_DESC_0));
+  writeByteXDATA(DUP_DMA1CFGH, highByte(ADDR_DMA_DESC_1));
+  writeByteXDATA(DUP_DMA1CFGL, lowByte(ADDR_DMA_DESC_1));
+
+  // 3. Set Flash controller start address (16 MSB of 18 bit address)
+  writeByteXDATA(DUP_FADDRH, highByte( (addr >> 2) ));
+  writeByteXDATA(DUP_FADDRL, lowByte( (addr >> 2) ));
+
+  // 4. Arm DBG => RAM buffer, DMA channel and start burst write
+  writeByteXDATA(DUP_DMAARM, CH_DBG_TO_BUF0);
+  burstBlock(buf, bufLen);
+
+  // 5. Start programming: buffer to flash
+  writeByteXDATA(DUP_DMAARM, CH_BUF0_TO_FLASH);
+  writeByteXDATA(DUP_FCTL, 0x06);
+
+  // 6. Wait until flash controller is done
+  while (readByteXDATA(DUP_FCTL) & 0x80);
 }
 
 int TIbeeProgrammer::getMaxBufferLength(unsigned long address) {
@@ -189,7 +235,22 @@ int TIbeeProgrammer::getMaxBufferLength(unsigned long address) {
 }
 
 void TIbeeProgrammer::writeByteXDATA(unsigned long addr, byte value) {
-  // TODO
+  byte instr[3];
+
+  // MOV DPTR, address
+  instr[0] = 0x90;
+  instr[1] = highByte(addr);
+  instr[2] = lowByte(addr);
+  sendInstruction(CMD_DEBUG_INSTR_3, instr, 3);
+
+  // MOV A, value
+  instr[0] = 0x74;
+  instr[1] = value;
+  sendInstruction(CMD_DEBUG_INSTR_2, instr, 2);
+
+  // MOV @DPTR, A
+  instr[0] = 0xF0;
+  sendInstruction(CMD_DEBUG_INSTR_1, instr, 1);
 }
 
 void TIbeeProgrammer::writeBlockXDATA(unsigned long addr, byte buf[], int bufLen) {
@@ -216,6 +277,18 @@ void TIbeeProgrammer::writeBlockXDATA(unsigned long addr, byte buf[], int bufLen
     instr[0] = 0xA3;
     sendInstruction(CMD_DEBUG_INSTR_1, instr, 1);
   }
+}
+
+void TIbeeProgrammer::burstBlock(byte buf[], int bufLen) {
+  // Write command with buffer length
+  sendBits(CMD_BURST_WRITE | highByte(bufLen), 8);
+  sendBits(lowByte(bufLen), 8);
+
+  // Send the data
+  for (int i = 0; i < bufLen; i++)
+    sendBits(buf[i], 8);
+
+  receiveBits(8);
 }
 
 /*---------------------------------------------------------------*/
