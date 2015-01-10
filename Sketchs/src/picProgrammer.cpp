@@ -223,7 +223,7 @@ unsigned int PicProgrammer::getDeviceId() {
 
 bool PicProgrammer::isSupported(unsigned int deviceId) {
   // If you want to test & support new device, add you PIC chip ID here
-  if (deviceId & 0xFFE0 == 0x1080)
+  if ((deviceId & 0xFFE0) == 0x1080)
     return true;
 
   return false;

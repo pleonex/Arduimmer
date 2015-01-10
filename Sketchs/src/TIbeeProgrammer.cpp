@@ -127,7 +127,7 @@ unsigned int TIbeeProgrammer::getDeviceId()
 
 bool TIbeeProgrammer::isSupported(unsigned int deviceId)
 {
-    if (deviceId & 0xFF00 == 0xA500)
+    if ((deviceId & 0xFF00) == 0xA500)
         return true;
 
     return false;
