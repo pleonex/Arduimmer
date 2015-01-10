@@ -83,6 +83,15 @@ unsigned long SerialBuffer::readUInt32() {
     return value;
 }
 
+/**
+ * Receive a char arrary from serial port.
+ */
+void SerialBuffer::readString(char buffer[], int len) {
+  // Wait for all the data
+  while (Serial.available() < len) ;
+  Serial.readBytes(buffer, len);
+}
+
 byte SerialBuffer::char2int(char ch) {
     if (ch >= '0' && ch <= '9')
         return ch - '0';

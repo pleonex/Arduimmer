@@ -82,19 +82,21 @@ void ping() {
 /* This method will ask any additional info like program code    */
 /*---------------------------------------------------------------*/
 void program() {
+  // Communication from serial buffer
+  SerialBuffer* serialBuffer = new SerialBuffer();
+
   // Get configuration from PC
   // .. Read device name
   char deviceName[10];
-  serialReceiveString(deviceName, 10);
+  serialBuffer->readString(deviceName, 10);
 
   // .. Get all the ports
   int ports[10];
-  int numPorts = serialReceiveByte();
+  int numPorts = serialBuffer->readByte();
   for (int i = 0; i < numPorts; i++)
-    ports[i] = serialReceiveByte();
+    ports[i] = serialBuffer->readByte();
 
   // Get program code from PC
-  SerialBuffer* serialBuffer = new SerialBuffer();
   serialBuffer->parse();
 
   // Create the programmer
@@ -143,21 +145,6 @@ IcspProgrammer* programmerFactory(char deviceName[], int ports[])
   }
 
   return programmer;
-}
-
-/**
- * Receive a char arrary from serial port.
- */
-void serialReceiveString(char buffer[], int len) {
-  // Wait for all the data
-  while (Serial.available() < len) ;
-  Serial.readBytes(buffer, len);
-}
-
-byte serialReceiveByte() {
-  // Wait for it
-  while (Serial.available() < 1) ;
-  return Serial.read();
 }
 
 /**

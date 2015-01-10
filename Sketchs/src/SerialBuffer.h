@@ -29,6 +29,11 @@ public:
 
     void parse();
 
+    byte readByte();
+    int readBytes(byte buffer[]);
+    unsigned long readUInt32();
+    void readString(char buffer[], int len);
+
     bool dataAvailable();
     int nextData(unsigned long* addr, byte buffer[]);
 
@@ -39,10 +44,6 @@ private:
 
     byte numEntries;
     byte currEntry;
-
-    byte readByte();
-    int readBytes(byte buffer[]);
-    unsigned long readUInt32();
 
     byte char2int(char ch);
 };
