@@ -25,10 +25,6 @@ SerialBuffer::SerialBuffer() {
 
 void SerialBuffer::parse() {
     numEntries = readByte();
-    for (int i = 0; i < numEntries; i++) {
-        address[i] = readUInt32();
-        dataLength[i] = readBytes(data[i]);
-    }
 }
 
 bool SerialBuffer::dataAvailable() {
@@ -36,12 +32,14 @@ bool SerialBuffer::dataAvailable() {
 }
 
 int SerialBuffer::nextData(unsigned long* addr, byte buffer[]) {
-    *addr = address[currEntry];
+    if (!dataAvailable())
+        return 0;
 
-    for (int i = 0; i < dataLength[currEntry]; i++)
-        buffer[i] = data[currEntry][i];
+    *addr  = readUInt32();
+    int dataLength = readBytes(buffer);
 
-    return dataLength[currEntry++];
+    currEntry++;
+    return dataLength;
 }
 
 byte SerialBuffer::readByte() {

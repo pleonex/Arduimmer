@@ -38,10 +38,6 @@ public:
     int nextData(unsigned long* addr, byte buffer[]);
 
 private:
-    unsigned long address[MAX_ENTRIES];
-    byte data[MAX_ENTRIES][BUFFER_LENGTH];
-    int dataLength[MAX_ENTRIES];
-
     byte numEntries;
     byte currEntry;
 
