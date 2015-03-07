@@ -143,8 +143,14 @@ namespace Arduimmer
 			socket.Write((byte)dataRecords.Count);
 
 			// Sends records
-			foreach (HexRecord record in dataRecords)
+			int i = 0;
+			int x = Console.CursorLeft;
+			int y = Console.CursorTop;
+			foreach (HexRecord record in dataRecords) {
+				Console.SetCursorPosition(x, y);
+				Console.WriteLine("Sending record {0} of {1}", ++i, dataRecords.Count);
 				SendDataRecord(record);
+			}
 		}
 
 		void SendDataRecord(HexRecord record)

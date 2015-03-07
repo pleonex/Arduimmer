@@ -31,7 +31,7 @@ namespace Arduimmer
 		public Hex(HexRecord[] records)
 		{
 			this.records = records;
-			dataRecords = GroupDataRecords(records);
+			this.dataRecords = GroupDataRecords(records);
 		}
 
 		public ReadOnlyCollection<HexRecord> Records {
@@ -45,10 +45,8 @@ namespace Arduimmer
 		static HexRecord[] GroupDataRecords(HexRecord[] records)
 		{
 			var dataRecords = new List<HexRecord>();
-
 			uint upperLoadBaseAddress = 0;
-			uint startAddress = 0xFFFFFFFF;
-			var currentData = new List<byte>();
+
 			foreach (HexRecord entry in records) {
 				// Set the upper part of the address
 				if (entry.RecordType == RecordType.ExtendedLinearAddr)
@@ -57,36 +55,16 @@ namespace Arduimmer
 				if (entry.RecordType != RecordType.Data)
 					continue;
 
-				// Calculate the current entry addres
+				// Calculate the full entry addres
 				uint address = upperLoadBaseAddress + entry.Address;
 
-				// Initialize the buffer address if so
-				if (startAddress == 0xFFFFFFFF)
-					startAddress = address;
-
-				// If the address are not contiguous, create data record and start again
-				if (address != startAddress + currentData.Count) {
-					dataRecords.Add(new HexRecord { 
-						Address    = startAddress, 
-						Data       = currentData.ToArray(),
-						RecordType = RecordType.Data
-					});
-
-					// Start again
-					currentData.Clear();
-					startAddress = address;
-				}
-
-				// Add the content of this entry to the buffer
-				currentData.AddRange(entry.Data);
+				// Add to the list
+				dataRecords.Add(new HexRecord { 
+					Address    = address, 
+					Data       = entry.Data,
+					RecordType = RecordType.Data
+				});
 			}
-
-			// Create the record for the buffer
-			dataRecords.Add(new HexRecord { 
-				Address    = startAddress, 
-				Data       = currentData.ToArray(),
-				RecordType = RecordType.Data
-			});
 
 			return dataRecords.ToArray();
 		}
