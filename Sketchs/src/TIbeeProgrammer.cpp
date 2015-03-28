@@ -138,14 +138,8 @@ bool TIbeeProgrammer::isSupported(unsigned int deviceId)
 /*---------------------------------------------------------------*/
 bool TIbeeProgrammer::erase()
 {
-  // Initialize
-  // Switch DUP to external crystal osc. (XOSC) and wait for it to be stable.
-  writeByteXDATA(DUP_CLKCONCMD, 0x80);
-  while (readByteXDATA(DUP_CLKCONSTA) != 0x80);
-
   // Send erase command and receive debug status
-  sendBits(CMD_CHIP_ERASE, 8);
-  byte status = receiveBits(8);
+  byte status = sendInstruction(CMD_CHIP_ERASE, NULL, 0);
 
   // Check if erase has started
   byte isErasing = status >> 7;
@@ -155,8 +149,7 @@ bool TIbeeProgrammer::erase()
   // Wait until erase has finished or max iteration reached
   for(int i = 1; i <= 10; i++) {
     // Request debug status with "RD_CONFIG"
-    sendBits(CMD_RD_CONFIG, 8);
-    status = receiveBits(8);
+    status = sendInstruction(CMD_RD_CONFIG, NULL, 0);
 
     // Check if ease has finished
     isErasing = status >> 7;
