@@ -109,7 +109,6 @@ unsigned int TIbeeProgrammer::sendInstruction(byte command, byte *inst, int n)
 void TIbeeProgrammer::initDMA() {
   // Enable DMA (Disable DMA_PAUSE bit in debug configuration)
   byte debug_config = 0x22;
-
   sendInstruction(CMD_WR_CONFIG, &debug_config, 1);
 }
 
@@ -164,7 +163,8 @@ bool TIbeeProgrammer::erase()
 /*---------------------------------------------------------------*/
 /*                      Write functions                          */
 /*---------------------------------------------------------------*/
-void TIbeeProgrammer::writeBlock(unsigned long addr, byte buf[], int bufLen)
+void TIbeeProgrammer::writeBlock(unsigned long addr, byte buf[],
+    unsigned short bufLen)
 {
   // Make sure the DMA is enabled
   if (!enableDMA) {
@@ -227,7 +227,7 @@ int TIbeeProgrammer::getMaxBufferLength(unsigned long address) {
   return 1024;
 }
 
-void TIbeeProgrammer::writeByteXDATA(unsigned long addr, byte value) {
+void TIbeeProgrammer::writeByteXDATA(unsigned short addr, byte value) {
   byte instr[3];
 
   // MOV DPTR, address
@@ -246,17 +246,17 @@ void TIbeeProgrammer::writeByteXDATA(unsigned long addr, byte value) {
   sendInstruction(CMD_DEBUG_INSTR_1, instr, 1);
 }
 
-void TIbeeProgrammer::writeBlockXDATA(unsigned long addr, byte buf[], int bufLen) {
+void TIbeeProgrammer::writeBlockXDATA(unsigned short addr, byte buf[],
+    unsigned short bufLen) {
   byte instr[3];
 
   //MOV DPTR, Address
   instr[0] = 0x90;
   instr[1] = highByte(addr);
   instr[2] = lowByte(addr);
-
   sendInstruction(CMD_DEBUG_INSTR_3, instr, 3);
 
-  for(int i = 0; i < bufLen; i++){
+  for (int i = 0; i < bufLen; i++) {
     //MOV A, values[i]
     instr[0] = 0x74;
     instr[1] = buf[i];
@@ -272,7 +272,7 @@ void TIbeeProgrammer::writeBlockXDATA(unsigned long addr, byte buf[], int bufLen
   }
 }
 
-void TIbeeProgrammer::burstBlock(byte buf[], int bufLen) {
+void TIbeeProgrammer::burstBlock(byte buf[], unsigned short bufLen) {
   // Write command with buffer length
   sendBits(CMD_BURST_WRITE | highByte(bufLen), 8);
   sendBits(lowByte(bufLen), 8);
@@ -287,7 +287,8 @@ void TIbeeProgrammer::burstBlock(byte buf[], int bufLen) {
 /*---------------------------------------------------------------*/
 /*                       Read functions                          */
 /*---------------------------------------------------------------*/
-void TIbeeProgrammer::readBlock(unsigned long addr, byte buffer[], int bufLen)
+void TIbeeProgrammer::readBlock(unsigned short addr, byte buffer[],
+    unsigned short bufLen)
 {
   byte instr[3];
   unsigned short xdata_addr = (0x8000 + addr);
@@ -313,7 +314,7 @@ void TIbeeProgrammer::readBlock(unsigned long addr, byte buffer[], int bufLen)
   }
 }
 
-byte TIbeeProgrammer::readByteXDATA(unsigned long addr) {
+byte TIbeeProgrammer::readByteXDATA(unsigned short addr) {
   byte instr[3];
 
   // MOV DPTR, address

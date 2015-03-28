@@ -31,12 +31,12 @@ bool SerialBuffer::dataAvailable() {
     return currEntry < numEntries;
 }
 
-int SerialBuffer::nextData(unsigned long* addr, byte buffer[]) {
+unsigned short SerialBuffer::nextData(unsigned long* addr, byte buffer[]) {
     if (!dataAvailable())
         return 0;
 
     *addr  = readUInt32();
-    int dataLength = readBytes(buffer);
+    unsigned short dataLength = readBytes(buffer);
 
     currEntry++;
     return dataLength;
@@ -55,8 +55,8 @@ byte SerialBuffer::readByte() {
     return value;
 }
 
-int SerialBuffer::readBytes(byte buffer[]) {
-    int length = (int)readUInt32();
+unsigned short SerialBuffer::readBytes(byte buffer[]) {
+    unsigned short length = readUInt16();
 
     // Wait for the data
     while (Serial.available() < length*2) ;
@@ -80,6 +80,19 @@ unsigned long SerialBuffer::readUInt32() {
 
     return value;
 }
+
+unsigned short SerialBuffer::readUInt16() {
+    unsigned short value = 0;
+
+    // Wait for the data
+    while (Serial.available() < 2*2) ;
+
+    value = readByte();
+    value |= readByte() << 8;
+
+    return value;
+}
+
 
 /**
  * Receive a char arrary from serial port.

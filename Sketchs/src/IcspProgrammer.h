@@ -51,8 +51,8 @@ class IcspProgrammer
     void sendBit(byte data);
     void sendBits(unsigned int data, int n);
 
-    virtual void readBlock(unsigned long addr, byte buf[], int bufLen) = 0;
-    virtual void writeBlock(unsigned long addr, byte buf[], int bufLen) = 0;
+    virtual void readBlock(unsigned short addr, byte buf[], unsigned short bufLen) = 0;
+    virtual void writeBlock(unsigned long addr, byte buf[], unsigned short bufLen) = 0;
     virtual int getMaxBufferLength(unsigned long address) = 0;
 
     int dataPin;

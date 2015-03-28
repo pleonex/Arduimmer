@@ -29,12 +29,13 @@ public:
     void parse();
 
     byte readByte();
-    int readBytes(byte buffer[]);
+    unsigned short readBytes(byte buffer[]);
     unsigned long readUInt32();
+    unsigned short readUInt16();
     void readString(char buffer[], int len);
 
     bool dataAvailable();
-    int nextData(unsigned long* addr, byte buffer[]);
+    unsigned short nextData(unsigned long* addr, byte buffer[]);
 
 private:
     int numEntries;

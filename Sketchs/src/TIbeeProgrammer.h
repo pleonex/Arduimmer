@@ -21,9 +21,9 @@
 #include "Arduino.h"
 #include "IcspProgrammer.h"
 
-const byte CMD_DEBUG_INSTR_1 = B01010001;    // Run 1 instruction in CPU
-const byte CMD_DEBUG_INSTR_2 = B01010010;    // Run 2 instructions in CPU
-const byte CMD_DEBUG_INSTR_3 = B01010011;    // Run 3 instructions in CPU
+const byte CMD_DEBUG_INSTR_1 = B01010101;    // Run 1 instruction in CPU
+const byte CMD_DEBUG_INSTR_2 = B01010110;    // Run 2 instructions in CPU
+const byte CMD_DEBUG_INSTR_3 = B01010111;    // Run 3 instructions in CPU
 const byte CMD_CHIP_ERASE    = B00010000;    // Erase the chip
 const byte CMD_WR_CONFIG     = B00011001;    // Write debug configuration
 const byte CMD_RD_CONFIG     = B00100000;    // Read debug configuration
@@ -52,7 +52,7 @@ const byte CH_BUF0_TO_FLASH = 0x02; // Channel 1
 // Start addresses on DUP (Increased buffer size improves performance)
 const unsigned short ADDR_BUF0       = 0x0000; // Buffer (512 bytes)
 const unsigned short ADDR_DMA_DESC_0 = 0x0200; // DMA descriptors (8 bytes)
-#define ADDR_DMA_DESC_1 (ADDR_DMA_DESC_0 + 8)
+const unsigned short ADDR_DMA_DESC_1 = ADDR_DMA_DESC_0 + 8;
 
 class TIbeeProgrammer : public IcspProgrammer
 {
@@ -70,8 +70,8 @@ class TIbeeProgrammer : public IcspProgrammer
   protected:
     virtual void init();
 
-    virtual void readBlock(unsigned long addr, byte buf[], int bufLen);
-    virtual void writeBlock(unsigned long addr, byte buf[], int bufLen);
+    virtual void readBlock(unsigned short addr, byte buf[], unsigned short bufLen);
+    virtual void writeBlock(unsigned long addr, byte buf[], unsigned short bufLen);
     virtual int getMaxBufferLength(unsigned long address);
 
   private:
@@ -82,9 +82,9 @@ class TIbeeProgrammer : public IcspProgrammer
     unsigned int sendInstruction(byte command, byte *inst, int n);
 
     void initDMA();
-    void writeByteXDATA(unsigned long addr, byte value);
-    void writeBlockXDATA(unsigned long addr, byte buf[], int bufLen);
-    void burstBlock(byte* buf, int bufLen);
-    byte readByteXDATA(unsigned long addr);
+    void writeByteXDATA(unsigned short addr, byte value);
+    void writeBlockXDATA(unsigned short addr, byte buf[], unsigned short bufLen);
+    void burstBlock(byte* buf, unsigned short bufLen);
+    byte readByteXDATA(unsigned short addr);
 };
 #endif
