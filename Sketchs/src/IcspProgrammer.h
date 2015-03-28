@@ -20,7 +20,7 @@
 #define IcspProgrammer_h
 #include "Arduino.h"
 
-#define BUFFER_LENGTH 2048
+#define BUFFER_LENGTH 16
 
 class IcspProgrammer
 {

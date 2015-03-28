@@ -20,8 +20,7 @@
 #define SerialBuffer_h
 #include "Arduino.h"
 
-#define MAX_ENTRIES 5
-#define BUFFER_LENGTH 2048
+#define BUFFER_LENGTH 16
 
 class SerialBuffer {
 public:
