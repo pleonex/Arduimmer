@@ -24,7 +24,7 @@ SerialBuffer::SerialBuffer() {
 }
 
 void SerialBuffer::parse() {
-    numEntries = readByte();
+    numEntries = readUInt32();
 }
 
 bool SerialBuffer::dataAvailable() {

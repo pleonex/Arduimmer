@@ -37,8 +37,8 @@ public:
     int nextData(unsigned long* addr, byte buffer[]);
 
 private:
-    byte numEntries;
-    byte currEntry;
+    int numEntries;
+    int currEntry;
 
     byte char2int(char ch);
 };
