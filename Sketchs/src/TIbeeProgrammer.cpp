@@ -80,8 +80,8 @@ unsigned int TIbeeProgrammer::receiveBits(int n)
   for (int i = n - 1; i >= 0; i--) {
     // Send a clockPin pulse to get next bit.
     digitalWrite(clockPin, HIGH);
-    digitalWrite(clockPin, LOW);
     bitWrite(data, i, digitalRead(dataPin));
+    digitalWrite(clockPin, LOW);
   }
 
   // Set again dataPin as output (default)
@@ -93,7 +93,7 @@ unsigned int TIbeeProgrammer::receiveBits(int n)
 /**
  * Send 1, 2 or 3 instructions
  */
-unsigned int TIbeeProgrammer::sendInstruction(byte command, byte *inst, int n)
+unsigned int TIbeeProgrammer::sendInstruction(byte command, byte inst[], int n)
 {
   // Send command
   sendBits(command, 8);
