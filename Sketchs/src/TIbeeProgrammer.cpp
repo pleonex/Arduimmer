@@ -291,8 +291,8 @@ void TIbeeProgrammer::readBlock(unsigned short addr, byte buffer[],
     unsigned short bufLen)
 {
   byte instr[3];
-  unsigned short xdata_addr = (0x8000 + addr);
-  byte bank = 0;
+  unsigned short xdata_addr = (0x8000 + (addr % 0x8000));
+  byte bank = addr / 0x8000;
 
   // 1. Map flash memory bank to XDATA address 0x8000 - 0xFFFF
   writeByteXDATA(DUP_MEMCTR, bank);
