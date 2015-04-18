@@ -45,6 +45,7 @@
     <Compile Include="Hex\HexParser.cs" />
     <Compile Include="ProgrammerFactory.cs" />
     <Compile Include="ErrorCode.cs" />
+    <Compile Include="Hex\HexAdapter.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

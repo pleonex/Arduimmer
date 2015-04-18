@@ -26,12 +26,12 @@ namespace Arduimmer
 	public class Hex
 	{
 		readonly HexRecord[] records;
-		readonly HexRecord[] dataRecords;
+		readonly IList<HexRecord> dataRecords;
 
 		public Hex(HexRecord[] records)
 		{
 			this.records = records;
-			this.dataRecords = GroupDataRecords(records);
+			this.dataRecords = HexAdapter.AdaptCode(records);
 		}
 
 		public ReadOnlyCollection<HexRecord> Records {
@@ -40,33 +40,6 @@ namespace Arduimmer
 
 		public ReadOnlyCollection<HexRecord> DataRecords {
 			get { return new ReadOnlyCollection<HexRecord>(dataRecords); }
-		}
-
-		static HexRecord[] GroupDataRecords(HexRecord[] records)
-		{
-			var dataRecords = new List<HexRecord>();
-			uint upperLoadBaseAddress = 0;
-
-			foreach (HexRecord entry in records) {
-				// Set the upper part of the address
-				if (entry.RecordType == RecordType.ExtendedLinearAddr)
-					upperLoadBaseAddress = entry.Address;
-
-				if (entry.RecordType != RecordType.Data)
-					continue;
-
-				// Calculate the full entry addres
-				uint address = upperLoadBaseAddress + entry.Address;
-
-				// Add to the list
-				dataRecords.Add(new HexRecord { 
-					Address    = address, 
-					Data       = entry.Data,
-					RecordType = RecordType.Data
-				});
-			}
-
-			return dataRecords.ToArray();
 		}
 	}
 }
