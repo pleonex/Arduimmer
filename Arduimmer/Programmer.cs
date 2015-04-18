@@ -27,7 +27,7 @@ namespace Arduimmer
 {
 	public class Programmer
 	{
-		const int MaxInterationWaiting = 10;
+		const int MaxInterationWaiting = 100;
 		const string Ready = "Ready!";
 		const string Ack   = "ACK!";
 		const string Done  = "Done!";
@@ -143,7 +143,7 @@ namespace Arduimmer
 			int x = Console.CursorLeft;
 			int y = Console.CursorTop;
 			foreach (HexRecord record in dataRecords) {
-				//Console.SetCursorPosition(x, y);
+				Console.SetCursorPosition(x, y);
 				Console.WriteLine("Sending record {0} of {1}", ++i, dataRecords.Count);
 				SendDataRecord(record);
 				if (!CheckResult(Ack))
@@ -167,7 +167,7 @@ namespace Arduimmer
 		{
 			// Wait for the result
 			for (int i = 0; i < MaxInterationWaiting && socket.DataAvailable == 0; i++)
-				Thread.Sleep(500);
+				Thread.Sleep(50);
 
 			if (socket.DataAvailable == 0) {
 				Error = ErrorCode.TimeOut;
@@ -181,9 +181,10 @@ namespace Arduimmer
 				if (line[0] == 'E') {
 					Error = (ErrorCode)Convert.ToByte(line.Substring(1, 2), 16);
 					break;
-				} else if (line == expected)
+				} else if (line == expected) {
 					result = true;
-				else
+					break;
+				} else
 					Console.WriteLine("## DEBUG ## " + line);
 			}
 
