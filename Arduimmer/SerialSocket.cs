@@ -98,6 +98,11 @@ namespace Arduimmer
 			Write(BitConverter.GetBytes(v));
 		}
 
+		public void Write(ushort v)
+		{
+			Write(BitConverter.GetBytes(v));
+		}
+
 		public string ReadLine()
 		{
 			return port.ReadLine();

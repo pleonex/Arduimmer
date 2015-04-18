@@ -262,7 +262,7 @@ void TIbeeProgrammer::writeBlockXDATA(unsigned short addr, byte buf[],
     instr[1] = buf[i];
     sendInstruction(CMD_DEBUG_INSTR_2, instr, 2);
 
-    //MOV A, values[i]
+    //MOV @DPTR, A
     instr[0] = 0xF0;
     sendInstruction(CMD_DEBUG_INSTR_1, instr, 1);
 
