@@ -28,7 +28,9 @@ namespace Arduimmer
 		UnknownDevice = 1,
 		InvalidDevice = 2,
 		DataMismatch = 3,
+		Erase = 4,
 
+		TimeOut = 0xFE,
 		DisconnectedDevice = 0xFF
 	}
 }
