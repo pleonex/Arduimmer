@@ -27,6 +27,10 @@ namespace Arduimmer
 {
 	public class Programmer
 	{
+		const int MaxInterationWaiting = 10;
+		const string Ready = "Ready!";
+		const string Ack   = "ACK!";
+		const string Done  = "Done!";
 		readonly SerialSocket socket;
 
 		internal Programmer(string portName)
@@ -117,22 +121,14 @@ namespace Arduimmer
 			foreach (int p in ports)
 				socket.Write((byte)p);
 
+			// Wait untit it's ready or there has been an error
+			if (!CheckResult(Ready))
+				return;
+
 			// Sends the code
 			SendCode(code);
 
-			// Wait the result
-			bool finished = false;
-			while (!finished) {
-				Thread.Sleep(100);
-				if (socket.DataAvailable == 0)
-					continue;
-
-				string result = socket.ReadLine();
-				finished = (result == "Done!");
-
-				if (result[0] == 'E')
-					Error = (ErrorCode)Convert.ToByte(result.Substring(1));
-			}
+			CheckResult(Done);
 		}
 
 		void SendCode(Hex code)
@@ -140,16 +136,18 @@ namespace Arduimmer
 			var dataRecords = code.DataRecords;
 
 			// Sends number of records
-			socket.Write((byte)dataRecords.Count);
+			socket.Write((uint)dataRecords.Count);
 
 			// Sends records
 			int i = 0;
 			int x = Console.CursorLeft;
 			int y = Console.CursorTop;
 			foreach (HexRecord record in dataRecords) {
-				Console.SetCursorPosition(x, y);
+				//Console.SetCursorPosition(x, y);
 				Console.WriteLine("Sending record {0} of {1}", ++i, dataRecords.Count);
 				SendDataRecord(record);
+				if (!CheckResult(Ack))
+					break;
 			}
 		}
 
@@ -159,10 +157,37 @@ namespace Arduimmer
 			socket.Write(record.Address);
 
 			// Sends data length
-			socket.Write((uint)record.Data.Length);
+			socket.Write((ushort)record.Data.Length);
 
 			// Sends data
 			socket.Write(record.Data);
+		}
+
+		bool CheckResult(string expected)
+		{
+			// Wait for the result
+			for (int i = 0; i < MaxInterationWaiting && socket.DataAvailable == 0; i++)
+				Thread.Sleep(500);
+
+			if (socket.DataAvailable == 0) {
+				Error = ErrorCode.TimeOut;
+				return false;
+			}
+
+			// Check all the lines from the input
+			bool result = false;
+			while (socket.DataAvailable != 0) {
+				string line = socket.ReadLine();
+				if (line[0] == 'E') {
+					Error = (ErrorCode)Convert.ToByte(line.Substring(1, 2), 16);
+					break;
+				} else if (line == expected)
+					result = true;
+				else
+					Console.WriteLine("## DEBUG ## " + line);
+			}
+
+			return (Error == ErrorCode.NoError) ? result : false;
 		}
 	}
 }
