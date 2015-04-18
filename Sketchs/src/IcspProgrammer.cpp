@@ -40,9 +40,7 @@ void IcspProgrammer::sendBit(byte data) {
   // while the clockPin is high.
   digitalWrite(clockPin, HIGH);
   digitalWrite(dataPin, data);
-
   digitalWrite(clockPin, LOW);
-  digitalWrite(dataPin, LOW);
 }
 
 /**
