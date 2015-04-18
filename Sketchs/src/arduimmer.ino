@@ -17,7 +17,6 @@
     along with Arduimmer.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "IcspProgrammer.h"
-#include "picProgrammer.h"
 #include "TIbeeProgrammer.h"
 #include "SerialBuffer.h"
 
@@ -30,10 +29,13 @@ char command[CMD_LENGTH + 1];
 const char PING[] = "Hey!";
 const char PONG[] = "Yes?";
 const char CODE[] = "Pro!";
+const char ACK[]  = "ACK!";
+const char READY[]    = "Ready!";
 const char FINISHED[] = "Done!";
 const char ERROR_UNKNOWN_DEVICE[] = "E01";
 const char ERROR_INVALID_DEVICE[] = "E02";
 const char ERROR_DATA_MISMATCH[]  = "E03";
+const char ERROR_ERASE[]          = "E04";
 
 /*---------------------------------------------------------------*/
 /*                            Main setup                         */
@@ -96,11 +98,8 @@ void program() {
   for (int i = 0; i < numPorts; i++)
     ports[i] = serialBuffer->readByte();
 
-  // Get program code from PC
-  serialBuffer->parse();
-
   // Create the programmer
-  IcspProgrammer* programmer = programmerFactory(deviceName, ports);
+  TIbeeProgrammer* programmer = new TIbeeProgrammer(ports[0], ports[1], ports[2]);
   if (programmer == NULL) {
     Serial.println(ERROR_UNKNOWN_DEVICE);
     return;
@@ -113,18 +112,39 @@ void program() {
   // Get device ID and verify it
   unsigned int deviceId = programmer->getDeviceId();
   error = !programmer->isSupported(deviceId);
-  if (error)
+  if (error) {
     Serial.println(ERROR_INVALID_DEVICE);
+    return;
+  }
+
+  // Erase the cip
+  error = !programmer->erase();
+  if (error) {
+    Serial.println(ERROR_ERASE);
+    return;
+  }
+
+  // Delay to wait erase operation to complete
+  delay(100);
+
+  // Get program code from PC
+  Serial.println(READY);
+  serialBuffer->parse();
 
   // Write and verify the program
   while (serialBuffer->dataAvailable() && !error) {
     error = !writeNextBlock(programmer, serialBuffer);
     if (error)
       Serial.println(ERROR_DATA_MISMATCH);
+    else
+      Serial.println(ACK);
   }
 
   // Exit programming mode
   programmer->exitProgrammingMode();
+
+  // Release memory
+  delete programmer;
 
   // Say goodbye!
   Serial.println(FINISHED);
@@ -138,9 +158,7 @@ IcspProgrammer* programmerFactory(char deviceName[], int ports[])
   IcspProgrammer* programmer = NULL;
 
   // Choose by device name
-  if (strcmp(deviceName, "pic18f") == 0){
-    programmer = new PicProgrammer(ports[0], ports[1], ports[2], ports[3]);
-  } else if (strcmp(deviceName, "cc25") == 0) {
+  if (strcmp(deviceName, "cc25") == 0) {
     programmer = new TIbeeProgrammer(ports[0], ports[1], ports[2]);
   }
 
@@ -156,7 +174,7 @@ bool writeNextBlock(IcspProgrammer* programmer, SerialBuffer* serialBuffer) {
   byte bufferRead[BUFFER_LENGTH];
 
   // Get data to write
-  int bufferLength = serialBuffer->nextData(&address, bufferWrite);
+  unsigned short bufferLength = serialBuffer->nextData(&address, bufferWrite);
 
   // Write it
   programmer->writeBytes(address, bufferWrite, bufferLength);
@@ -166,8 +184,18 @@ bool writeNextBlock(IcspProgrammer* programmer, SerialBuffer* serialBuffer) {
 
   // Verify it
   bool success = true;
-  for (int i = 0; i < bufferLength && success; i++)
+  for (int i = 0; i < bufferLength; i++) {
     success = (bufferWrite[i] == bufferRead[i]);
+    if (bufferWrite[i] != bufferRead[i]) {
+      Serial.print(i);
+      Serial.print("(0x");
+      Serial.print(address + i, HEX);
+      Serial.print("): ");
+      Serial.print(bufferWrite[i], HEX);
+      Serial.print(" -> ");
+      Serial.println(bufferRead[i], HEX);
+    }
+  }
 
   return success;
 }
