@@ -54,30 +54,34 @@ const unsigned short ADDR_BUF0       = 0x0000; // Buffer (512 bytes)
 const unsigned short ADDR_DMA_DESC_0 = 0x0200; // DMA descriptors (8 bytes)
 const unsigned short ADDR_DMA_DESC_1 = ADDR_DMA_DESC_0 + 8;
 
-class TIbeeProgrammer : public IcspProgrammer
+class TIbeeProgrammer
 {
     public:
-    TIbeeProgrammer(int dataPin, int clockPin, int resetPin);
+    TIbeeProgrammer(int pins[]);
 
-    virtual void enterProgrammingMode();
-    virtual void exitProgrammingMode();
+    void enterProgrammingMode();
+    void exitProgrammingMode();
 
-    virtual unsigned int getDeviceId();
-    virtual bool isSupported(unsigned int deviceId);
+    unsigned int getDeviceId();
+    bool isSupported(unsigned int deviceId);
 
-    virtual bool erase();
+    void readBytes(unsigned short addr, byte buf[], unsigned short bufLen);
+    void writeBytes(unsigned long addr, byte buf[], unsigned short bufLen);
 
-  protected:
-    virtual void init();
-
-    virtual void readBlock(unsigned short addr, byte buf[], unsigned short bufLen);
-    virtual void writeBlock(unsigned long addr, byte buf[], unsigned short bufLen);
-    virtual int getMaxBufferLength(unsigned long address);
+    bool erase();
 
   private:
+    // # Variables #
+    int dataPin;
+    int clockPin;
     int resetPin;
+    bool isMsb;
     bool enableDMA;
 
+    void init();
+
+    void sendBit(byte data);
+    void sendBits(unsigned int data, int n);
     unsigned int receiveBits(int n);
     unsigned int sendInstruction(byte command, byte *inst, int n);
 

@@ -1,44 +1,52 @@
 /*
-TIbeeProgrammer.cpp - Using Arduino as a CC2530 (8051 processor) programmer.
+  TIbeeProgrammer.cpp - Using Arduino as a CC2530 (8051 processor) programmer.
 
-This file is part of Arduimmer.
+  This file is part of Arduimmer.
 
-Arduimmer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+  Arduimmer is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
 
-Arduimmer is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+  Arduimmer is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with Arduimmer.  If not, see <http://www.gnu.org/licenses/>.
+  You should have received a copy of the GNU General Public License
+  along with Arduimmer.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "Arduino.h"
 #include "TIbeeProgrammer.h"
 
-TIbeeProgrammer::TIbeeProgrammer(int dataPin, int clockPin, int resetPin)
-: IcspProgrammer(dataPin, clockPin, true)
+
+/**
+ * Constructor: Set the pins.
+ */
+TIbeeProgrammer::TIbeeProgrammer(int pins[])
 {
-  this->resetPin  = resetPin;
-  this->enableDMA = false;
+  dataPin   = pins[0];
+  clockPin  = pins[1];
+  resetPin  = pins[2];
+
+  isMsb     = true;
+  enableDMA = false;
   init();
 }
 
 /**
-* Configure the pin to use.
-*/
+ * Configure the pin diretion to use.
+ */
 void TIbeeProgrammer::init()
 {
-  IcspProgrammer::init();
+  pinMode(dataPin, OUTPUT);
+  pinMode(clockPin, OUTPUT);
   pinMode(resetPin, OUTPUT);
 }
 
 /**
-* Enter into Debug Mode.
-*/
+ * Enter into Debug Mode.
+ */
 void TIbeeProgrammer::enterProgrammingMode()
 {
   digitalWrite(resetPin, LOW);
@@ -51,6 +59,9 @@ void TIbeeProgrammer::enterProgrammingMode()
   digitalWrite(resetPin, HIGH);
 }
 
+/**
+ * Quit the Debug Mode
+ */
 void TIbeeProgrammer::exitProgrammingMode()
 {
   // This is a guess... no official docs
@@ -59,8 +70,32 @@ void TIbeeProgrammer::exitProgrammingMode()
 }
 
 /**
-* Receive a bit stream from the processor.
-*/
+ * Send a bit to the processor.
+ */
+void TIbeeProgrammer::sendBit(byte data) {
+  // The bit is transmitted
+  // while the clockPin is high.
+  digitalWrite(clockPin, HIGH);
+  digitalWrite(dataPin, data);
+  digitalWrite(clockPin, LOW);
+}
+
+/**
+ * Send a bit stream to the processor.
+ */
+void TIbeeProgrammer::sendBits(unsigned int data, int n) {
+  if (isMsb) {
+    for (int i = n - 1; i >= 0; i--)
+      sendBit(bitRead(data, i));
+  } else {
+    for (int i = 0; i < n; i++)
+      sendBit(bitRead(data, i));
+  }
+}
+
+/**
+ * Receive a bit stream from the processor.
+ */
 unsigned int TIbeeProgrammer::receiveBits(int n)
 {
   // Wait for the chip to be ready
@@ -104,12 +139,6 @@ unsigned int TIbeeProgrammer::sendInstruction(byte command, byte inst[], int n)
 
   // Receive output byte
   return receiveBits(8);
-}
-
-void TIbeeProgrammer::initDMA() {
-  // Enable DMA (Disable DMA_PAUSE bit in debug configuration)
-  byte debug_config = 0x22;
-  sendInstruction(CMD_WR_CONFIG, &debug_config, 1);
 }
 
 /*---------------------------------------------------------------*/
@@ -163,7 +192,13 @@ bool TIbeeProgrammer::erase()
 /*---------------------------------------------------------------*/
 /*                      Write functions                          */
 /*---------------------------------------------------------------*/
-void TIbeeProgrammer::writeBlock(unsigned long addr, byte buf[],
+void TIbeeProgrammer::initDMA() {
+  // Enable DMA (Disable DMA_PAUSE bit in debug configuration)
+  byte debug_config = 0x22;
+  sendInstruction(CMD_WR_CONFIG, &debug_config, 1);
+}
+
+void TIbeeProgrammer::writeBytes(unsigned long addr, byte buf[],
     unsigned short bufLen)
 {
   // Make sure the DMA is enabled
@@ -221,10 +256,6 @@ void TIbeeProgrammer::writeBlock(unsigned long addr, byte buf[],
 
   // 6. Wait until flash controller is done
   while (readByteXDATA(DUP_FCTL) & 0x80);
-}
-
-int TIbeeProgrammer::getMaxBufferLength(unsigned long address) {
-  return 1024;
 }
 
 void TIbeeProgrammer::writeByteXDATA(unsigned short addr, byte value) {
@@ -287,7 +318,7 @@ void TIbeeProgrammer::burstBlock(byte buf[], unsigned short bufLen) {
 /*---------------------------------------------------------------*/
 /*                       Read functions                          */
 /*---------------------------------------------------------------*/
-void TIbeeProgrammer::readBlock(unsigned short addr, byte buffer[],
+void TIbeeProgrammer::readBytes(unsigned short addr, byte buffer[],
     unsigned short bufLen)
 {
   byte instr[3];

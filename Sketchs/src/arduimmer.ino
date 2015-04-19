@@ -16,9 +16,11 @@
     You should have received a copy of the GNU General Public License
     along with Arduimmer.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include "IcspProgrammer.h"
 #include "TIbeeProgrammer.h"
 #include "SerialBuffer.h"
+
+const int DEVICE_LENGTH    = 10;
+const int MAX_DEVICE_PORTS = 10;
 
 const int CMD_LENGTH = 4;
 char command[CMD_LENGTH + 1];
@@ -26,11 +28,16 @@ char command[CMD_LENGTH + 1];
 /*---------------------------------------------------------------*/
 /*                           Messages                            */
 /*---------------------------------------------------------------*/
+// Received (CMD_LENGTH)
 const char PING[] = "Hey!";
-const char PONG[] = "Yes?";
 const char CODE[] = "Pro!";
-const char ACK[]  = "ACK!";
-const char READY[]    = "Ready!";
+const char DEVICE[] = "cc25";
+
+// Sent (with newlines)
+const char PONG[]  = "Yes?";
+const char VALID[] = "Valid!";
+const char READY[] = "Ready!";
+const char ACK[]   = "ACK!";
 const char FINISHED[] = "Done!";
 const char ERROR_UNKNOWN_DEVICE[] = "E01";
 const char ERROR_INVALID_DEVICE[] = "E02";
@@ -85,40 +92,42 @@ void ping() {
 /*---------------------------------------------------------------*/
 void program() {
   // Communication from serial buffer
-  SerialBuffer* serialBuffer = new SerialBuffer();
+  SerialBuffer serialBuffer;
 
   // Get configuration from PC
   // .. Read device name
-  char deviceName[10];
-  serialBuffer->readString(deviceName, 10);
-
-  // .. Get all the ports
-  int ports[10];
-  int numPorts = serialBuffer->readByte();
-  for (int i = 0; i < numPorts; i++)
-    ports[i] = serialBuffer->readByte();
-
-  // Create the programmer
-  TIbeeProgrammer* programmer = new TIbeeProgrammer(ports[0], ports[1], ports[2]);
-  if (programmer == NULL) {
+  char deviceName[DEVICE_LENGTH];
+  serialBuffer.readString(deviceName, DEVICE_LENGTH);
+  if (strcmp(deviceName, DEVICE) != 0) {
     Serial.println(ERROR_UNKNOWN_DEVICE);
     return;
   }
+  
+  Serial.println(VALID);
+
+  // .. Get all the ports
+  int ports[MAX_DEVICE_PORTS];
+  int numPorts = serialBuffer.readByte();
+  for (int i = 0; i < numPorts; i++)
+    ports[i] = serialBuffer.readByte();
+
+  // Create the programmer
+  TIbeeProgrammer programmer(ports);
 
   // Enter debug mode
-  programmer->enterProgrammingMode();
+  programmer.enterProgrammingMode();
   bool error = false;
 
   // Get device ID and verify it
-  unsigned int deviceId = programmer->getDeviceId();
-  error = !programmer->isSupported(deviceId);
+  unsigned int deviceId = programmer.getDeviceId();
+  error = !programmer.isSupported(deviceId);
   if (error) {
     Serial.println(ERROR_INVALID_DEVICE);
     return;
   }
 
   // Erase the cip
-  error = !programmer->erase();
+  error = !programmer.erase();
   if (error) {
     Serial.println(ERROR_ERASE);
     return;
@@ -129,10 +138,10 @@ void program() {
 
   // Get program code from PC
   Serial.println(READY);
-  serialBuffer->parse();
+  serialBuffer.parse();
 
   // Write and verify the program
-  while (serialBuffer->dataAvailable() && !error) {
+  while (serialBuffer.dataAvailable() && !error) {
     error = !writeNextBlock(programmer, serialBuffer);
     if (error)
       Serial.println(ERROR_DATA_MISMATCH);
@@ -141,46 +150,28 @@ void program() {
   }
 
   // Exit programming mode
-  programmer->exitProgrammingMode();
-
-  // Release memory
-  delete programmer;
+  programmer.exitProgrammingMode();
 
   // Say goodbye!
   Serial.println(FINISHED);
 }
 
-/*
- * Create the device programmer
- */
-IcspProgrammer* programmerFactory(char deviceName[], int ports[])
-{
-  IcspProgrammer* programmer = NULL;
-
-  // Choose by device name
-  if (strcmp(deviceName, "cc25") == 0) {
-    programmer = new TIbeeProgrammer(ports[0], ports[1], ports[2]);
-  }
-
-  return programmer;
-}
-
 /**
  * Write the next data block into the device memory.
  */
-bool writeNextBlock(IcspProgrammer* programmer, SerialBuffer* serialBuffer) {
+bool writeNextBlock(TIbeeProgrammer& programmer, SerialBuffer& serialBuffer) {
   unsigned long address;
   byte bufferWrite[BUFFER_LENGTH];
   byte bufferRead[BUFFER_LENGTH];
 
   // Get data to write
-  unsigned short bufferLength = serialBuffer->nextData(&address, bufferWrite);
+  unsigned short bufferLength = serialBuffer.nextData(&address, bufferWrite);
 
   // Write it
-  programmer->writeBytes(address, bufferWrite, bufferLength);
+  programmer.writeBytes(address, bufferWrite, bufferLength);
 
   // Read it again
-  programmer->readBytes(address, bufferRead, bufferLength);
+  programmer.readBytes(address, bufferRead, bufferLength);
 
   // Verify it
   bool success = true;

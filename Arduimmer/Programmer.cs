@@ -28,6 +28,7 @@ namespace Arduimmer
 	public class Programmer
 	{
 		const int MaxInterationWaiting = 100;
+		const string Valid = "Valid!";
 		const string Ready = "Ready!";
 		const string Ack   = "ACK!";
 		const string Done  = "Done!";
@@ -115,6 +116,8 @@ namespace Arduimmer
 
 			// Sends device name
 			socket.Write(deviceName, 10);
+			if (!CheckResult(Valid))
+				return;
 
 			// Sends the ports
 			socket.Write((byte)ports.Length);
