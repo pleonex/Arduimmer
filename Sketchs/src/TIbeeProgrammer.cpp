@@ -23,7 +23,7 @@
 /**
  * Constructor: Set the pins.
  */
-TIbeeProgrammer::TIbeeProgrammer(int pins[])
+Programmer::Programmer(int pins[])
 {
   dataPin   = pins[0];
   clockPin  = pins[1];
@@ -37,7 +37,7 @@ TIbeeProgrammer::TIbeeProgrammer(int pins[])
 /**
  * Configure the pin diretion to use.
  */
-void TIbeeProgrammer::init()
+void Programmer::init()
 {
   pinMode(dataPin, OUTPUT);
   pinMode(clockPin, OUTPUT);
@@ -47,7 +47,7 @@ void TIbeeProgrammer::init()
 /**
  * Enter into Debug Mode.
  */
-void TIbeeProgrammer::enterProgrammingMode()
+void Programmer::enterProgrammingMode()
 {
   digitalWrite(resetPin, LOW);
 
@@ -62,7 +62,7 @@ void TIbeeProgrammer::enterProgrammingMode()
 /**
  * Quit the Debug Mode
  */
-void TIbeeProgrammer::exitProgrammingMode()
+void Programmer::exitProgrammingMode()
 {
   // This is a guess... no official docs
   digitalWrite(resetPin, LOW);
@@ -72,7 +72,7 @@ void TIbeeProgrammer::exitProgrammingMode()
 /**
  * Send a bit to the processor.
  */
-void TIbeeProgrammer::sendBit(byte data) {
+void Programmer::sendBit(byte data) {
   // The bit is transmitted
   // while the clockPin is high.
   digitalWrite(clockPin, HIGH);
@@ -83,7 +83,7 @@ void TIbeeProgrammer::sendBit(byte data) {
 /**
  * Send a bit stream to the processor.
  */
-void TIbeeProgrammer::sendBits(unsigned int data, int n) {
+void Programmer::sendBits(unsigned int data, int n) {
   if (isMsb) {
     for (int i = n - 1; i >= 0; i--)
       sendBit(bitRead(data, i));
@@ -96,7 +96,7 @@ void TIbeeProgrammer::sendBits(unsigned int data, int n) {
 /**
  * Receive a bit stream from the processor.
  */
-unsigned int TIbeeProgrammer::receiveBits(int n)
+unsigned int Programmer::receiveBits(int n)
 {
   // Wait for the chip to be ready
   // indicated by setting dataPin to high.
@@ -128,7 +128,7 @@ unsigned int TIbeeProgrammer::receiveBits(int n)
 /**
  * Send 1, 2 or 3 instructions
  */
-unsigned int TIbeeProgrammer::sendInstruction(byte command, byte inst[], int n)
+unsigned int Programmer::sendInstruction(byte command, byte inst[], int n)
 {
   // Send command
   sendBits(command, 8);
@@ -144,7 +144,7 @@ unsigned int TIbeeProgrammer::sendInstruction(byte command, byte inst[], int n)
 /*---------------------------------------------------------------*/
 /*                   Chip Id functions                           */
 /*---------------------------------------------------------------*/
-unsigned int TIbeeProgrammer::getDeviceId()
+unsigned int Programmer::getDeviceId()
 {
   // Send "get chip command"
   sendBits(B01101000, 8);
@@ -153,7 +153,7 @@ unsigned int TIbeeProgrammer::getDeviceId()
   return receiveBits(16);
 }
 
-bool TIbeeProgrammer::isSupported(unsigned int deviceId)
+bool Programmer::isSupported(unsigned int deviceId)
 {
     if ((deviceId & 0xFF00) == 0xA500)
         return true;
@@ -164,7 +164,7 @@ bool TIbeeProgrammer::isSupported(unsigned int deviceId)
 /*---------------------------------------------------------------*/
 /*                      Erase functions                          */
 /*---------------------------------------------------------------*/
-bool TIbeeProgrammer::erase()
+bool Programmer::erase()
 {
   // Send erase command and receive debug status
   byte status = sendInstruction(CMD_CHIP_ERASE, NULL, 0);
@@ -192,13 +192,13 @@ bool TIbeeProgrammer::erase()
 /*---------------------------------------------------------------*/
 /*                      Write functions                          */
 /*---------------------------------------------------------------*/
-void TIbeeProgrammer::initDMA() {
+void Programmer::initDMA() {
   // Enable DMA (Disable DMA_PAUSE bit in debug configuration)
   byte debug_config = 0x22;
   sendInstruction(CMD_WR_CONFIG, &debug_config, 1);
 }
 
-void TIbeeProgrammer::writeBytes(unsigned long addr, byte buf[],
+void Programmer::writeBytes(unsigned long addr, byte buf[],
     unsigned short bufLen)
 {
   // Make sure the DMA is enabled
@@ -258,7 +258,7 @@ void TIbeeProgrammer::writeBytes(unsigned long addr, byte buf[],
   while (readByteXDATA(DUP_FCTL) & 0x80);
 }
 
-void TIbeeProgrammer::writeByteXDATA(unsigned short addr, byte value) {
+void Programmer::writeByteXDATA(unsigned short addr, byte value) {
   byte instr[3];
 
   // MOV DPTR, address
@@ -277,7 +277,7 @@ void TIbeeProgrammer::writeByteXDATA(unsigned short addr, byte value) {
   sendInstruction(CMD_DEBUG_INSTR_1, instr, 1);
 }
 
-void TIbeeProgrammer::writeBlockXDATA(unsigned short addr, byte buf[],
+void Programmer::writeBlockXDATA(unsigned short addr, byte buf[],
     unsigned short bufLen) {
   byte instr[3];
 
@@ -303,7 +303,7 @@ void TIbeeProgrammer::writeBlockXDATA(unsigned short addr, byte buf[],
   }
 }
 
-void TIbeeProgrammer::burstBlock(byte buf[], unsigned short bufLen) {
+void Programmer::burstBlock(byte buf[], unsigned short bufLen) {
   // Write command with buffer length
   sendBits(CMD_BURST_WRITE | highByte(bufLen), 8);
   sendBits(lowByte(bufLen), 8);
@@ -318,7 +318,7 @@ void TIbeeProgrammer::burstBlock(byte buf[], unsigned short bufLen) {
 /*---------------------------------------------------------------*/
 /*                       Read functions                          */
 /*---------------------------------------------------------------*/
-void TIbeeProgrammer::readBytes(unsigned short addr, byte buffer[],
+void Programmer::readBytes(unsigned short addr, byte buffer[],
     unsigned short bufLen)
 {
   byte instr[3];
@@ -345,7 +345,7 @@ void TIbeeProgrammer::readBytes(unsigned short addr, byte buffer[],
   }
 }
 
-byte TIbeeProgrammer::readByteXDATA(unsigned short addr) {
+byte Programmer::readByteXDATA(unsigned short addr) {
   byte instr[3];
 
   // MOV DPTR, address

@@ -102,7 +102,7 @@ void program() {
     Serial.println(ERROR_UNKNOWN_DEVICE);
     return;
   }
-  
+
   Serial.println(VALID);
 
   // .. Get all the ports
@@ -112,7 +112,7 @@ void program() {
     ports[i] = serialBuffer.readByte();
 
   // Create the programmer
-  TIbeeProgrammer programmer(ports);
+  Programmer programmer(ports);
 
   // Enter debug mode
   programmer.enterProgrammingMode();
@@ -159,7 +159,7 @@ void program() {
 /**
  * Write the next data block into the device memory.
  */
-bool writeNextBlock(TIbeeProgrammer& programmer, SerialBuffer& serialBuffer) {
+bool writeNextBlock(Programmer& programmer, SerialBuffer& serialBuffer) {
   unsigned long address;
   byte bufferWrite[BUFFER_LENGTH];
   byte bufferRead[BUFFER_LENGTH];

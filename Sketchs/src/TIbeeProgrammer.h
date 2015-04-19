@@ -54,10 +54,10 @@ const unsigned short ADDR_BUF0       = 0x0000; // Buffer (512 bytes)
 const unsigned short ADDR_DMA_DESC_0 = 0x0200; // DMA descriptors (8 bytes)
 const unsigned short ADDR_DMA_DESC_1 = ADDR_DMA_DESC_0 + 8;
 
-class TIbeeProgrammer
+class Programmer
 {
     public:
-    TIbeeProgrammer(int pins[]);
+    Programmer(int pins[]);
 
     void enterProgrammingMode();
     void exitProgrammingMode();
