@@ -20,7 +20,11 @@
 #define SerialBuffer_h
 #include "Arduino.h"
 
-#define BUFFER_LENGTH 16
+// Must be a multiple of 4. 0x1C (28) bytes is the maximum allowed since the
+// Arduino buffer size is 64 bytes and to send a byte in ASCII in HEX we need
+// two bytes. TIbeeProgrammer only allowed 0x10 as maximum since it's not
+// implemented to read a block of bytes from differents banks.
+#define BUFFER_LENGTH 0x10
 
 class SerialBuffer {
 public:

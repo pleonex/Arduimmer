@@ -19,6 +19,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
+using System.Diagnostics;
 using System.IO;
 
 namespace Arduimmer
@@ -27,6 +28,9 @@ namespace Arduimmer
 	{
 		public static void Main(string[] args)
 		{
+			Stopwatch watch = new Stopwatch();
+			watch.Start();
+
 			ShowHeader();
 
 			if (args.Length < 4) {
@@ -38,7 +42,9 @@ namespace Arduimmer
 				CodeDevice(args);
 			}
 
+			watch.Stop();
 			Console.WriteLine();
+			Console.WriteLine("It took {0}", watch.Elapsed);
 			Console.WriteLine("Good ICSProgramming!");
 			Console.WriteLine("Press any key to quit. . .");
 			Console.ReadKey(true);
@@ -46,7 +52,7 @@ namespace Arduimmer
 
 		static void ShowHeader()
 		{
-			Console.WriteLine("Arduimmer  Copyright (C) 2014  Benito Palacios (aka pleonex)");
+			Console.WriteLine("Arduimmer  Copyright (C) 2015  Benito Palacios (aka pleonex)");
 			Console.WriteLine("This program comes with ABSOLUTELY NO WARRANTY.");
 			Console.WriteLine("This is free software, and you are welcome to redistribute it");
 			Console.WriteLine("under certain conditions.");
