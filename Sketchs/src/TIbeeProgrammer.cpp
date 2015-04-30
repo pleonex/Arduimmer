@@ -318,7 +318,7 @@ void Programmer::burstBlock(byte buf[], unsigned short bufLen) {
 /*---------------------------------------------------------------*/
 /*                       Read functions                          */
 /*---------------------------------------------------------------*/
-void Programmer::readBytes(unsigned short addr, byte buffer[],
+void Programmer::readBytes(unsigned long addr, byte buffer[],
     unsigned short bufLen)
 {
   byte instr[3];

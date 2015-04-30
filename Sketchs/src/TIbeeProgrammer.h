@@ -65,7 +65,7 @@ class Programmer
     unsigned int getDeviceId();
     bool isSupported(unsigned int deviceId);
 
-    void readBytes(unsigned short addr, byte buf[], unsigned short bufLen);
+    void readBytes(unsigned long addr, byte buf[], unsigned short bufLen);
     void writeBytes(unsigned long addr, byte buf[], unsigned short bufLen);
 
     bool erase();
