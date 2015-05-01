@@ -147,7 +147,8 @@ namespace Arduimmer
 			int y = Console.CursorTop;
 			foreach (HexRecord record in dataRecords) {
 				Console.SetCursorPosition(x, y);
-				Console.WriteLine("Sending record {0} of {1}", ++i, dataRecords.Count);
+				Console.WriteLine("Sending record {0} of {1} ({2:F1}%)",
+					++i, dataRecords.Count, i * 100.0 / dataRecords.Count);
 				SendDataRecord(record);
 				if (!CheckResult(Ack))
 					break;
