@@ -66,6 +66,8 @@ namespace Arduimmer
 		private static IList<HexRecord> NormalizeAddress(IList<HexRecord> records)
 		{
 			int programSize = (int)records.Max(r => r.Address + r.Data.Length);
+			programSize += (programSize % 4 != 0) ? 4 - (programSize % 4) : 0;
+
 			byte[] program  = new byte[programSize];
 
 			// Build the entire program (in micros it's only a few kb's, I hope)
